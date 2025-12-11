@@ -1,0 +1,11 @@
+{
+  "name": "Security check (pre-commit)",
+  "description": "Run gitleaks to detect sensitive information before committing",
+  "trigger": {
+    "type": "manual"
+  },
+  "action": {
+    "type": "command",
+    "command": "./scripts/security-check.sh"
+  }
+}

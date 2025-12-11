@@ -1,0 +1,76 @@
+# Gitleaks configuration for TriageNinja
+# Detects sensitive information like API keys, tokens, passwords
+
+title = "TriageNinja Security Configuration"
+
+[extend]
+# Use default gitleaks rules
+useDefault = true
+
+# Additional custom rules
+[[rules]]
+id = "aws-access-key-id"
+description = "AWS Access Key ID"
+regex = '''AKIA[0-9A-Z]{16}'''
+tags = ["aws", "credentials"]
+
+[[rules]]
+id = "aws-secret-access-key"
+description = "AWS Secret Access Key"
+regex = '''(?i)aws(.{0,20})?['\"][0-9a-zA-Z\/+]{40}['\"]'''
+tags = ["aws", "credentials"]
+
+[[rules]]
+id = "github-token"
+description = "GitHub Personal Access Token"
+regex = '''ghp_[0-9a-zA-Z]{36}'''
+tags = ["github", "token"]
+
+[[rules]]
+id = "github-oauth"
+description = "GitHub OAuth Token"
+regex = '''gho_[0-9a-zA-Z]{36}'''
+tags = ["github", "token"]
+
+[[rules]]
+id = "private-key"
+description = "Private Key"
+regex = '''-----BEGIN PRIVATE KEY-----'''
+tags = ["key", "private"]
+
+[[rules]]
+id = "rsa-private-key"
+description = "RSA Private Key"
+regex = '''-----BEGIN RSA PRIVATE KEY-----'''
+tags = ["key", "private"]
+
+[[rules]]
+id = "atlassian-api-token"
+description = "Atlassian API Token"
+regex = '''(?i)atlassian(.{0,20})?['\"][0-9a-zA-Z]{24}['\"]'''
+tags = ["atlassian", "token"]
+
+[[rules]]
+id = "generic-api-key"
+description = "Generic API Key"
+regex = '''(?i)(api[_-]?key|apikey)(.{0,20})?['\"][0-9a-zA-Z]{32,45}['\"]'''
+tags = ["api", "key"]
+
+# Allowlist - files to exclude from scanning
+[allowlist]
+description = "Allowlisted files"
+paths = [
+    '''\.md$''',                    # Markdown files
+    '''package-lock\.json$''',      # Package lock file
+    '''\.gitleaks\.toml$''',        # This config file
+    '''\.git/''',                   # Git directory
+    '''node_modules/''',            # Dependencies
+]
+
+# Allowlist specific patterns that are false positives
+regexes = [
+    '''example\.com''',             # Example domains
+    '''your-api-key-here''',        # Placeholder text
+    '''YOUR_TOKEN_HERE''',          # Placeholder text
+    '''<your-.*>''',                # Placeholder patterns
+]

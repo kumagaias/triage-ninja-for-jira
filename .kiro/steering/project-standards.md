@@ -180,6 +180,52 @@ wc -l .kiro/steering/*.md
 find .kiro/steering -name "*.md" -exec wc -l {} \; | awk '$1 > 1500 {print $2 " has " $1 " lines (exceeds limit)"}'
 ```
 
+## Project Initialization
+
+### First Steps After Project Creation
+
+**⚠️ IMPORTANT: Always set up security checks first before any development**
+
+When starting a new project, follow these steps in order:
+
+**1. Set up security checks (MANDATORY)**
+```bash
+# Check if gitleaks is installed
+make check-tools
+
+# If gitleaks is not installed, install it
+# macOS
+brew install gitleaks
+
+# Linux/Windows
+# See: https://github.com/gitleaks/gitleaks#installing
+
+# Verify security check works
+make security-check
+```
+
+**2. Install dependencies**
+```bash
+make install
+```
+
+**3. Verify all tools are ready**
+```bash
+make check-tools
+```
+
+**Why security checks first?**
+- Prevents accidental commit of sensitive information
+- Establishes security-first culture
+- Easier to fix before any code is written
+- Required for all projects
+
+**Files created for security:**
+- `scripts/security-check.sh` - Security check script
+- `.gitleaks.toml` - Gitleaks configuration
+- `.kiro/hooks/pre-commit-security.json` - Kiro hook
+- `Makefile` - Includes security-check command
+
 ## Development Flow
 
 ### Basic Development Flow

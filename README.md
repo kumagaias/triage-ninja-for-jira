@@ -33,22 +33,35 @@ git clone https://github.com/yourusername/triageninja.git
 cd triageninja
 ```
 
-2. Install dependencies:
+2. **Set up security checks (REQUIRED FIRST)**:
 ```bash
-npm install
+# Check if gitleaks is installed
+make check-tools
+
+# Install gitleaks if needed
+# macOS:
+brew install gitleaks
+
+# Verify security check works
+make security-check
 ```
 
-3. Login to Forge:
+3. Install dependencies:
+```bash
+make install
+```
+
+4. Login to Forge:
 ```bash
 forge login
 ```
 
-4. Deploy the app:
+5. Deploy the app:
 ```bash
 forge deploy
 ```
 
-5. Install on your Jira site:
+6. Install on your Jira site:
 ```bash
 forge install
 ```

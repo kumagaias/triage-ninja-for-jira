@@ -6,14 +6,29 @@
 
 #### Day 1-2: 環境構築
 
+- [ ] 1.0 セキュリティチェックセットアップ（最優先）
+  - Gitleaksインストール
+  - セキュリティスクリプト作成
+  - Makefileセットアップ
+  - 動作確認
+  - **受け入れ基準:**
+    - [ ] `gitleaks version`が正常に動作
+    - [ ] `make security-check`が実行できる
+    - [ ] `.gitleaks.toml`が作成済み
+    - [ ] `scripts/security-check.sh`が実行可能
+    - [ ] `.kiro/hooks/pre-commit-security.json`が作成済み
+  - _要件: セキュリティ要件_
+  - **⚠️ 注意: このタスクは他のすべてのタスクより先に完了すること**
+
 - [ ] 1.1 開発環境セットアップ
   - Forge CLIインストール
-  - Node.js 20.x確認
+  - Node.js 24.x確認
   - プロジェクト初期化
   - **受け入れ基準:**
     - [ ] `forge --version`が正常に動作
-    - [ ] Node.js 20.x以上がインストール済み
+    - [ ] Node.js 24.x以上がインストール済み
     - [ ] プロジェクトディレクトリが作成済み
+    - [ ] `make check-tools`がすべてグリーン
   - _要件: 技術要件_
 
 - [ ] 1.2 manifest.yml設定
