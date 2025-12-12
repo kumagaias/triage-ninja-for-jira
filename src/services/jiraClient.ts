@@ -11,6 +11,7 @@ import {
   JiraUser,
   ApiResponse,
   JiraErrorResponse,
+  JiraIssueFields,
 } from '../types/jira';
 
 /**
@@ -18,6 +19,52 @@ import {
  * Provides methods to interact with Jira REST API v3
  */
 export class JiraClient {
+  /**
+   * Handle API response and convert to ApiResponse format
+   * @param response - Fetch response object from @forge/api
+   * @returns Promise with typed API response
+   */
+  private static async handleResponse<T>(
+    response: any
+  ): Promise<ApiResponse<T>> {
+    if (!response.ok) {
+      const errorData = await response.json();
+      return {
+        error: errorData as JiraErrorResponse,
+        status: response.status,
+        ok: false,
+      };
+    }
+
+    const data = await response.json();
+    return {
+      data: data as T,
+      status: response.status,
+      ok: true,
+    };
+  }
+
+  /**
+   * Handle API errors in catch blocks
+   * @param error - Error object
+   * @param methodName - Name of the method that failed
+   * @returns ApiResponse with error information
+   */
+  private static handleApiError<T>(
+    error: unknown,
+    methodName: string
+  ): ApiResponse<T> {
+    console.error(`Failed to ${methodName}:`, error);
+    return {
+      error: {
+        errorMessages: [
+          error instanceof Error ? error.message : 'Unknown error',
+        ],
+      },
+      status: 500,
+      ok: false,
+    };
+  }
   /**
    * Fetch a single issue by key or ID
    * @param issueIdOrKey - Issue key (e.g., "HELP-123") or ID
@@ -29,37 +76,19 @@ export class JiraClient {
     fields?: string[]
   ): Promise<ApiResponse<JiraIssue>> {
     try {
-      const fieldsParam = fields ? `?fields=${fields.join(',')}` : '';
+      // Build query string separately from route tag
+      let url = `/rest/api/3/issue/${issueIdOrKey}`;
+      if (fields) {
+        url += `?${new URLSearchParams({ fields: fields.join(',') }).toString()}`;
+      }
+      
       const response = await api
         .asUser()
-        .requestJira(route`/rest/api/3/issue/${issueIdOrKey}${fieldsParam}`);
+        .requestJira(route`${url}` as any);
 
-      if (!response.ok) {
-        const errorData: JiraErrorResponse = await response.json();
-        return {
-          error: errorData,
-          status: response.status,
-          ok: false,
-        };
-      }
-
-      const data: JiraIssue = await response.json();
-      return {
-        data,
-        status: response.status,
-        ok: true,
-      };
+      return this.handleResponse<JiraIssue>(response);
     } catch (error) {
-      console.error('Failed to fetch issue:', error);
-      return {
-        error: {
-          errorMessages: [
-            error instanceof Error ? error.message : 'Unknown error',
-          ],
-        },
-        status: 500,
-        ok: false,
-      };
+      return this.handleApiError<JiraIssue>(error, 'fetch issue');
     }
   }
 
@@ -80,32 +109,9 @@ export class JiraClient {
         body: JSON.stringify(searchRequest),
       });
 
-      if (!response.ok) {
-        const errorData: JiraErrorResponse = await response.json();
-        return {
-          error: errorData,
-          status: response.status,
-          ok: false,
-        };
-      }
-
-      const data: JiraSearchResult = await response.json();
-      return {
-        data,
-        status: response.status,
-        ok: true,
-      };
+      return this.handleResponse<JiraSearchResult>(response);
     } catch (error) {
-      console.error('Failed to search issues:', error);
-      return {
-        error: {
-          errorMessages: [
-            error instanceof Error ? error.message : 'Unknown error',
-          ],
-        },
-        status: 500,
-        ok: false,
-      };
+      return this.handleApiError<JiraSearchResult>(error, 'search issues');
     }
   }
 
@@ -120,38 +126,21 @@ export class JiraClient {
     maxResults: number = 50
   ): Promise<ApiResponse<JiraUser[]>> {
     try {
+      // Build query string separately from route tag
+      const queryParams = new URLSearchParams({
+        project: projectKey,
+        maxResults: String(maxResults),
+      }).toString();
+      
+      const url = `/rest/api/3/user/assignable/search?${queryParams}`;
+      
       const response = await api
         .asUser()
-        .requestJira(
-          route`/rest/api/3/user/assignable/search?project=${projectKey}&maxResults=${maxResults}`
-        );
+        .requestJira(route`${url}` as any);
 
-      if (!response.ok) {
-        const errorData: JiraErrorResponse = await response.json();
-        return {
-          error: errorData,
-          status: response.status,
-          ok: false,
-        };
-      }
-
-      const data: JiraUser[] = await response.json();
-      return {
-        data,
-        status: response.status,
-        ok: true,
-      };
+      return this.handleResponse<JiraUser[]>(response);
     } catch (error) {
-      console.error('Failed to fetch assignable users:', error);
-      return {
-        error: {
-          errorMessages: [
-            error instanceof Error ? error.message : 'Unknown error',
-          ],
-        },
-        status: 500,
-        ok: false,
-      };
+      return this.handleApiError<JiraUser[]>(error, 'fetch assignable users');
     }
   }
 
@@ -163,7 +152,7 @@ export class JiraClient {
    */
   static async updateIssue(
     issueIdOrKey: string,
-    fields: Partial<JiraIssue['fields']>
+    fields: Partial<JiraIssueFields>
   ): Promise<ApiResponse<void>> {
     try {
       const response = await api
@@ -190,16 +179,7 @@ export class JiraClient {
         ok: true,
       };
     } catch (error) {
-      console.error('Failed to update issue:', error);
-      return {
-        error: {
-          errorMessages: [
-            error instanceof Error ? error.message : 'Unknown error',
-          ],
-        },
-        status: 500,
-        ok: false,
-      };
+      return this.handleApiError<void>(error, 'update issue');
     }
   }
 
@@ -238,16 +218,7 @@ export class JiraClient {
         ok: true,
       };
     } catch (error) {
-      console.error('Failed to assign issue:', error);
-      return {
-        error: {
-          errorMessages: [
-            error instanceof Error ? error.message : 'Unknown error',
-          ],
-        },
-        status: 500,
-        ok: false,
-      };
+      return this.handleApiError<void>(error, 'assign issue');
     }
   }
 }
