@@ -6,64 +6,64 @@
 
 #### Day 1-2: 環境構築
 
-- [ ] 1.0 セキュリティチェックセットアップ（最優先）
+- [x] 1.0 セキュリティチェックセットアップ（最優先）
   - Gitleaksインストール
   - セキュリティスクリプト作成
   - Makefileセットアップ
   - 動作確認
   - **受け入れ基準:**
-    - [ ] `gitleaks version`が正常に動作
-    - [ ] `make security-check`が実行できる
-    - [ ] `.gitleaks.toml`が作成済み
-    - [ ] `scripts/security-check.sh`が実行可能
-    - [ ] `.kiro/hooks/pre-commit-security.json`が作成済み
+    - [x] `gitleaks version`が正常に動作
+    - [x] `make security-check`が実行できる
+    - [x] `.gitleaks.toml`が作成済み
+    - [x] `scripts/security-check.sh`が実行可能
+    - [x] `.kiro/hooks/pre-commit-security.json`が作成済み
   - _要件: セキュリティ要件_
   - **⚠️ 注意: このタスクは他のすべてのタスクより先に完了すること**
 
-- [ ] 1.1 開発環境セットアップ
+- [x] 1.1 開発環境セットアップ
   - Forge CLIインストール
   - Node.js 24.x確認
   - プロジェクト初期化
   - **受け入れ基準:**
-    - [ ] `forge --version`が正常に動作
-    - [ ] Node.js 24.x以上がインストール済み
-    - [ ] プロジェクトディレクトリが作成済み
-    - [ ] `make check-tools`がすべてグリーン
+    - [x] `forge --version`が正常に動作
+    - [x] Node.js 24.x以上がインストール済み
+    - [x] プロジェクトディレクトリが作成済み
+    - [x] `make check-tools`がすべてグリーン
   - _要件: 技術要件_
 
-- [ ] 1.2 manifest.yml設定
+- [x] 1.2 manifest.yml設定
   - モジュール定義（projectPage, issuePanel, rovo:agent）
   - 権限設定（scopes）
   - 関数定義
   - **受け入れ基準:**
-    - [ ] `manifest.yml`が作成済み
-    - [ ] 必要なモジュールがすべて定義済み
-    - [ ] 権限スコープが正しく設定済み
-    - [ ] `forge lint`がエラーなし
+    - [x] `manifest.yml`が作成済み
+    - [x] 必要なモジュールがすべて定義済み
+    - [x] 権限スコープが正しく設定済み
+    - [x] `forge lint`がエラーなし
   - _要件: 技術要件_
 
-- [ ] 1.3 基本UIコンポーネント作成
+- [x] 1.3 基本UIコンポーネント作成
   - プロジェクト構造作成
   - React環境セットアップ
   - 基本レイアウトコンポーネント
   - **受け入れ基準:**
-    - [ ] `src/`ディレクトリ構造が作成済み
-    - [ ] React依存関係がインストール済み
-    - [ ] 基本コンポーネントが動作確認済み
-    - [ ] `forge tunnel`で表示確認
+    - [x] `src/`ディレクトリ構造が作成済み
+    - [x] React依存関係がインストール済み
+    - [x] 基本コンポーネントが動作確認済み
+    - [x] `forge tunnel`で表示確認
   - _要件: 技術要件_
 
 #### Day 3-4: Jira API統合
 
-- [ ] 2.1 Jira API クライアント実装
+- [x] 2.1 Jira API クライアント実装
   - API呼び出しラッパー作成
   - エラーハンドリング実装
   - 型定義作成
   - **受け入れ基準:**
-    - [ ] `src/services/jiraClient.ts`が作成済み
-    - [ ] 基本的なAPI呼び出しが動作
-    - [ ] エラーハンドリングが実装済み
-    - [ ] TypeScript型定義が完備
+    - [x] `src/services/jiraClient.ts`が作成済み
+    - [x] 基本的なAPI呼び出しが動作
+    - [x] エラーハンドリングが実装済み
+    - [x] TypeScript型定義が完備
   - _要件: 機能要件 1, 2, 3_
 
 - [ ] 2.2 チケット取得機能実装
