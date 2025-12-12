@@ -1,5 +1,5 @@
 import Resolver from '@forge/resolver';
-import api, { route } from '@forge/api';
+import { JiraClient } from './services/jiraClient';
 
 // Dashboard Resolver
 const dashboardResolver = new Resolver();
@@ -14,20 +14,18 @@ dashboardResolver.define('getUntriagedTickets', async (req) => {
   // JQL query to find untriaged tickets
   const jql = `project = ${projectKey} AND status = Open ORDER BY created DESC`;
   
-  const res = await api.asUser().requestJira(route`/rest/api/3/search`, {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json'
-    },
-    body: JSON.stringify({
-      jql: jql,
-      maxResults: 50,
-      fields: ['summary', 'priority', 'created', 'reporter']
-    })
+  const response = await JiraClient.searchIssues({
+    jql,
+    maxResults: 50,
+    fields: ['summary', 'priority', 'created', 'reporter']
   });
   
-  const data = await res.json();
-  return data.issues || [];
+  if (!response.ok || !response.data) {
+    console.error('Failed to fetch untriaged tickets:', response.error);
+    return [];
+  }
+  
+  return response.data.issues || [];
 });
 
 /**
@@ -56,8 +54,14 @@ const issuePanelResolver = new Resolver();
 issuePanelResolver.define('getIssueDetails', async (req) => {
   const issueKey = req.context.extension.issue.key;
   
-  const res = await api.asUser().requestJira(route`/rest/api/3/issue/${issueKey}`);
-  const data = await res.json();
+  const response = await JiraClient.getIssue(issueKey);
+  
+  if (!response.ok || !response.data) {
+    console.error('Failed to fetch issue details:', response.error);
+    throw new Error('Failed to load issue details');
+  }
+  
+  const data = response.data;
   
   return {
     key: data.key,
