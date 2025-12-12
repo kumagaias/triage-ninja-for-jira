@@ -1,15 +1,22 @@
 {
   "name": "jira-issue-panel-custom-ui",
   "version": "1.2.23",
-  "main": "index.js",
+  "main": "dist/index.js",
   "license": "MIT",
   "private": true,
+  "scripts": {
+    "build": "tsc",
+    "watch": "tsc --watch",
+    "clean": "rm -rf dist"
+  },
   "devDependencies": {
+    "@types/node": "^25.0.1",
     "eslint": "^8.56.0",
-    "eslint-plugin-react-hooks": "^4.6.0"
+    "eslint-plugin-react-hooks": "^4.6.0",
+    "typescript": "^5.9.3"
   },
   "dependencies": {
-    "@forge/resolver": "1.7.1",
-    "@forge/api": "6.4.1"
+    "@forge/api": "6.4.1",
+    "@forge/resolver": "1.7.1"
   }
 }
