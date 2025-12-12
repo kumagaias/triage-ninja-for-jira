@@ -27,7 +27,18 @@ export interface JiraIssueFields {
   created: string;
   updated: string;
   labels?: string[];
+  resolution?: JiraResolution | null;
+  resolutiondate?: string | null;
   [key: string]: any; // Allow custom fields
+}
+
+/**
+ * Jira Resolution
+ */
+export interface JiraResolution {
+  id: string;
+  name: string;
+  description?: string;
 }
 
 /**

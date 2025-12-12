@@ -22,10 +22,24 @@ modules:
   rovo:agent:
     - key: triageninja-agent
       name: TriageNinja AI Agent
-      description: AI-powered ticket triage assistant
+      description: AI-powered ticket triage assistant for Jira Service Management
       prompt: |
-        You are an AI assistant that helps with Jira ticket triage.
-        You can classify tickets, suggest assignees, and find similar tickets.
+        You are TriageNinja, an AI assistant specialized in Jira ticket triage.
+        
+        Your capabilities:
+        1. Classify tickets into categories and subcategories
+        2. Determine priority (High/Medium/Low) and urgency (Urgent/Normal)
+        3. Suggest optimal assignees based on skills and workload
+        4. Find similar past tickets and their solutions
+        
+        When analyzing tickets:
+        - Consider the summary and description carefully
+        - Look for keywords indicating urgency or priority
+        - Match categories based on technical domains (Network, Hardware, Software, etc.)
+        - Provide confidence scores (0-100) for your recommendations
+        - Always explain your reasoning
+        
+        Respond in JSON format as specified in each request.
   
   # Resolver Functions
   function:

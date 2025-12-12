@@ -30,7 +30,14 @@ function App() {
     setLoading(true);
     setError(null);
     try {
-      const result = await invoke('runAITriage');
+      // Pass issue details to the AI triage function
+      const result = await invoke('runAITriage', {
+        issueKey: issueDetails.key,
+        summary: issueDetails.summary,
+        description: issueDetails.description || '',
+        reporter: issueDetails.reporter?.displayName || 'Unknown',
+        created: issueDetails.created
+      });
       setTriageResult(result);
     } catch (err) {
       console.error('Failed to run AI triage:', err);
@@ -150,6 +157,37 @@ function App() {
               </p>
             </div>
           </div>
+
+          {triageResult.similarTickets && triageResult.similarTickets.length > 0 && (
+            <div style={{ marginBottom: '15px' }}>
+              <h3 style={{ fontSize: '14px', color: '#172B4D' }}>🔍 Similar Tickets ({triageResult.similarTickets.length})</h3>
+              {triageResult.similarTickets.slice(0, 3).map((ticket, index) => (
+                <div key={index} style={{
+                  padding: '8px',
+                  backgroundColor: '#F4F5F7',
+                  borderRadius: '3px',
+                  marginBottom: '5px',
+                  fontSize: '12px'
+                }}>
+                  <p style={{ margin: '2px 0', fontWeight: 'bold' }}>
+                    {ticket.id} ({Math.round(ticket.similarity * 100)}% similar)
+                  </p>
+                  <p style={{ margin: '2px 0', color: '#5E6C84' }}>
+                    {ticket.solution}
+                  </p>
+                </div>
+              ))}
+            </div>
+          )}
+
+          {triageResult.reasoning && (
+            <div style={{ marginBottom: '15px' }}>
+              <h3 style={{ fontSize: '14px', color: '#172B4D' }}>💡 Reasoning</h3>
+              <p style={{ margin: '5px 0', fontSize: '12px', color: '#5E6C84' }}>
+                {triageResult.reasoning}
+              </p>
+            </div>
+          )}
 
           <div style={{ marginTop: '20px' }}>
             <button
