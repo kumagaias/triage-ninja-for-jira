@@ -40,6 +40,21 @@ function App() {
     }
   };
 
+  // Handle approve action
+  const handleApprove = async () => {
+    // TODO: Implement approve logic in later tasks
+    // - Save triage result to Forge Storage
+    // - Update issue with category, priority, assignee
+    console.log('Approved triage result:', triageResult);
+    setTriageResult(null);
+  };
+
+  // Handle reject action
+  const handleReject = () => {
+    // Clear the triage result and allow user to run again
+    setTriageResult(null);
+  };
+
   if (!issueDetails) {
     return (
       <div style={{ padding: '20px', textAlign: 'center' }}>
@@ -138,7 +153,7 @@ function App() {
 
           <div style={{ marginTop: '20px' }}>
             <button
-              onClick={() => setTriageResult(null)}
+              onClick={handleApprove}
               style={{
                 width: '48%',
                 padding: '10px',
@@ -154,7 +169,7 @@ function App() {
               Approve
             </button>
             <button
-              onClick={() => setTriageResult(null)}
+              onClick={handleReject}
               style={{
                 width: '48%',
                 padding: '10px',

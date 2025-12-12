@@ -132,6 +132,13 @@ function TicketRow({ ticket }) {
     Lowest: '#00B8D9'
   };
 
+  const handleTriageClick = () => {
+    // Open the issue in a new tab
+    // Note: In Forge apps, we can use the issue key to construct the URL
+    // The actual Jira URL will be available in the context
+    window.open(`/browse/${ticket.key}`, '_blank', 'noopener,noreferrer');
+  };
+
   return (
     <div style={{
       display: 'flex',
@@ -157,16 +164,19 @@ function TicketRow({ ticket }) {
       }}>
         {ticket.fields.priority?.name || 'None'}
       </div>
-      <button style={{
-        marginLeft: '10px',
-        padding: '6px 12px',
-        backgroundColor: '#0052CC',
-        color: 'white',
-        border: 'none',
-        borderRadius: '3px',
-        fontSize: '12px',
-        cursor: 'pointer'
-      }}>
+      <button
+        onClick={handleTriageClick}
+        style={{
+          marginLeft: '10px',
+          padding: '6px 12px',
+          backgroundColor: '#0052CC',
+          color: 'white',
+          border: 'none',
+          borderRadius: '3px',
+          fontSize: '12px',
+          cursor: 'pointer'
+        }}
+      >
         Triage
       </button>
     </div>

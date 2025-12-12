@@ -35,8 +35,6 @@ dashboardResolver.define('getUntriagedTickets', async (req) => {
  * Returns metrics for the dashboard cards
  */
 dashboardResolver.define('getStatistics', async (req) => {
-  const projectKey = req.context.extension.project.key;
-  
   // Mock statistics for now - will be replaced with real data from Forge Storage
   return {
     untriagedCount: 24,
@@ -76,8 +74,6 @@ issuePanelResolver.define('getIssueDetails', async (req) => {
  * This will be connected to Rovo Agent in later tasks
  */
 issuePanelResolver.define('runAITriage', async (req) => {
-  const issueKey = req.context.extension.issue.key;
-  
   // Mock AI analysis result for now
   return {
     category: 'Network & Connectivity',
