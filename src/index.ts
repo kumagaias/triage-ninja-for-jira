@@ -69,15 +69,15 @@ issuePanelResolver.define('getIssueDetails', async (req) => {
     key: data.key,
     id: data.id,
     summary: data.fields.summary,
-    description: data.fields.description,
-    reporter: data.fields.reporter,
-    assignee: data.fields.assignee,
+    description: data.fields.description ?? null,
+    reporter: data.fields.reporter ?? null,
+    assignee: data.fields.assignee ?? null,
     created: data.fields.created,
     updated: data.fields.updated,
-    priority: data.fields.priority,
-    status: data.fields.status,
-    issueType: data.fields.issuetype,
-    labels: data.fields.labels,
+    priority: data.fields.priority ?? null,
+    status: data.fields.status ?? null,
+    issueType: data.fields.issuetype ?? null,
+    labels: data.fields.labels ?? [],
     // Custom fields are accessible via fields object
     customFields: Object.keys(data.fields)
       .filter(key => key.startsWith('customfield_'))

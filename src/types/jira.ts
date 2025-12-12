@@ -21,6 +21,7 @@ export interface JiraIssueFields {
   description?: string | null;
   priority?: JiraPriority | null;
   status?: JiraStatus | null;
+  issuetype?: JiraIssueType | null;
   assignee?: JiraUser | null;
   reporter?: JiraUser | null;
   created: string;
@@ -49,6 +50,17 @@ export interface JiraStatus {
     key: string;
     name: string;
   };
+}
+
+/**
+ * Jira Issue Type
+ */
+export interface JiraIssueType {
+  id: string;
+  name: string;
+  description?: string;
+  iconUrl?: string;
+  subtask: boolean;
 }
 
 /**
