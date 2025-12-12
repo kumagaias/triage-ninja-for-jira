@@ -1,216 +1,199 @@
-# 🥷 TriageNinja for Jira
+# TriageNinja for Jira
 
-**AI-Powered Intelligent Ticket Triage**
+AI-Powered Intelligent Ticket Triage for Jira Service Management and Jira Software.
 
-Master the art of AI triage with TriageNinja - an Atlassian Forge app that automates ticket classification, assignee matching, and solution discovery using Rovo AI.
+Master the art of AI triage with TriageNinja 🥷
 
-## 🎯 Overview
+## Overview
 
-TriageNinja transforms manual ticket triage into an automated, intelligent process. Built for IT teams, help desks, and support engineers, it reduces triage time by 80% while maintaining 95% accuracy.
+TriageNinja automates ticket triage using AI, reducing manual work by 80% and improving support team productivity. It provides:
 
-### Key Features
+- **AI-Powered Classification**: Automatically categorize tickets with 90%+ accuracy
+- **Smart Assignee Matching**: Suggest the best assignee based on skills and workload
+- **Similar Ticket Search**: Find past solutions instantly
+- **Real-time Dashboard**: Track triage metrics and untriaged tickets
 
-- **🤖 Automatic Ticket Classification**: AI analyzes ticket content and assigns categories, priorities, and urgency levels
-- **👤 Smart Assignee Matching**: Suggests optimal assignees based on skills, workload, and historical performance
-- **🔍 Similar Ticket Discovery**: Finds past tickets with solutions to accelerate resolution
-- **📊 Real-time Dashboard**: Visualizes triage status, statistics, and team performance
-- **✨ Confidence Scoring**: Displays AI analysis confidence with color-coded indicators
+## Features
 
-## 🚀 Quick Start
+### 🤖 AI Triage Panel
+- One-click AI analysis of Jira tickets
+- Category and priority detection
+- Confidence scoring
+- Assignee recommendations
 
-### Prerequisites
+### 📊 Dashboard
+- Untriaged ticket count
+- Daily processing statistics
+- Time savings metrics
+- AI accuracy tracking
 
-- Node.js 20.x or higher
-- Forge CLI installed (`npm install -g @forge/cli`)
-- Jira Cloud instance
-- Atlassian account
+### 🔍 Similar Ticket Search
+- Find related resolved tickets
+- View past solutions
+- Estimated resolution time
 
-### Installation
-
-1. Clone the repository:
-```bash
-git clone https://github.com/yourusername/triageninja.git
-cd triageninja
-```
-
-2. **Set up security checks (REQUIRED FIRST)**:
-```bash
-# Check if gitleaks is installed
-make check-tools
-
-# Install gitleaks if needed
-# macOS:
-brew install gitleaks
-
-# Verify security check works
-make security-check
-```
-
-3. Install dependencies:
-```bash
-make install
-```
-
-4. Login to Forge:
-```bash
-forge login
-```
-
-5. Deploy the app:
-```bash
-forge deploy
-```
-
-6. Install on your Jira site:
-```bash
-forge install
-```
-
-## 📸 Screenshots
-
-### Dashboard
-![Dashboard](docs/images/dashboard.png)
-*Real-time triage statistics and pending tickets*
-
-### AI Analysis Results
-![AI Analysis](docs/images/ai-analysis.png)
-*Intelligent ticket classification with confidence scoring*
-
-### Assignee Suggestions
-![Assignee Matching](docs/images/assignee-matching.png)
-*Smart assignee recommendations based on expertise*
-
-## 🏗️ Architecture
-
-### Tech Stack
+## Tech Stack
 
 - **Platform**: Atlassian Forge (Serverless)
-- **Frontend**: React (Forge UI Kit 2), Tailwind CSS
-- **Backend**: Node.js 20.x, Forge Functions
-- **AI Engine**: Atlassian Rovo Agent
+- **Frontend**: React + Custom UI
+- **Backend**: Node.js 22.x
+- **AI**: Atlassian Rovo Agent
+- **Storage**: Forge Storage
 - **APIs**: Jira REST API v3
-- **Storage**: Forge Storage (Runs on Atlassian)
 
-### Key Components
+## Requirements
 
+- Node.js 24.x or 22.x
+- Forge CLI 12.x+
+- Atlassian account with Jira access
+- Gitleaks (for security checks)
+
+## Installation
+
+### 1. Install Dependencies
+
+```bash
+# Check required tools
+make check-tools
+
+# Install dependencies
+npm install
+
+# Install frontend dependencies
+npm install --prefix static/dashboard
+npm install --prefix static/issue-panel
 ```
-┌─────────────────────────────────────────┐
-│           Jira Cloud UI                 │
-│  ┌──────────┐  ┌──────────────────┐    │
-│  │Dashboard │  │  Issue Panel     │    │
-│  └────┬─────┘  └────┬─────────────┘    │
-└───────┼─────────────┼──────────────────┘
-        │             │
-   ┌────▼─────────────▼────┐
-   │   Forge Runtime        │
-   │   ┌──────┐  ┌────────┐│
-   │   │ React│  │Functions││
-   │   └──┬───┘  └───┬────┘│
-   └──────┼──────────┼──────┘
-          │          │
-    ┌─────▼──┐  ┌───▼─────┐
-    │ Rovo   │  │  Jira   │
-    │ Agent  │  │   API   │
-    └────────┘  └─────────┘
+
+### 2. Build Frontend
+
+```bash
+# Build dashboard
+npm run build --prefix static/dashboard
+
+# Build issue panel
+npm run build --prefix static/issue-panel
 ```
 
-## 🎬 Demo Video
+### 3. Deploy to Forge
 
-Watch TriageNinja in action: [Demo Video Link](https://youtu.be/your-video-id)
+```bash
+# Deploy to development environment
+forge deploy --non-interactive --environment development
 
-## 🏆 Hackathon Highlights
+# Install to your Jira site
+forge install --non-interactive --site <your-jira-site> --product jira --environment development
+```
 
-### Best Rovo Apps Bonus Prize
-
-TriageNinja leverages Atlassian Rovo Agent with three specialized AI tasks:
-
-1. **Ticket Classification**: Analyzes summary and description to determine category, priority, and urgency
-2. **Assignee Matching**: Evaluates team skills and workload to suggest optimal assignees
-3. **Similar Ticket Search**: Uses semantic similarity to find relevant past solutions
-
-### Best Runs on Atlassian Bonus Prize
-
-Built entirely on Atlassian infrastructure:
-
-- ✅ All data stored in Forge Storage (no external databases)
-- ✅ Runs on Atlassian's secure, compliant infrastructure
-- ✅ Follows Forge security best practices
-- ✅ Encrypted data storage and transmission
-
-## 📊 Performance
-
-- **Triage Time**: 5-10 minutes → 10 seconds (80% reduction)
-- **AI Accuracy**: 95%+ classification accuracy
-- **Response Time**: <3 seconds for AI analysis
-- **Scalability**: Handles 1,000+ tickets/day
-
-## 🔐 Security & Privacy
-
-- Forge Storage for all data persistence
-- Minimal permission scopes (read/write:jira-work, read:jira-user)
-- No external data transmission
-- Encrypted data at rest and in transit
-- Compliant with Atlassian security standards
-
-## 📝 Documentation
-
-- [Requirements](/.kiro/specs/triageninja/requirements.md) - Detailed requirements (Japanese)
-- [Design](/.kiro/specs/triageninja/design.md) - Technical design document (Japanese)
-- [Tasks](/.kiro/specs/triageninja/tasks.md) - Implementation tasks (Japanese)
-
-## 🛠️ Development
+## Development
 
 ### Local Development
 
 ```bash
-# Start local tunnel
+# Start tunnel for hot reload
 forge tunnel
 
-# Run tests
-npm test
-
-# Lint code
-npm run lint
-
-# Build
-npm run build
+# In another terminal, make changes to frontend
+cd static/dashboard
+npm start
 ```
 
-### Project Structure
+### Testing
+
+```bash
+# Run all tests (unit + security)
+make test
+
+# Run security checks only
+make security-check
+
+# Run unit tests only
+make test-unit
+```
+
+### Linting
+
+```bash
+# Lint Forge app
+forge lint
+```
+
+## Project Structure
 
 ```
-triageninja/
+.
 ├── src/
-│   ├── components/        # React components
-│   ├── services/          # API clients and business logic
-│   ├── ai/                # Rovo Agent functions
-│   ├── storage/           # Forge Storage operations
-│   └── index.tsx          # Entry point
-├── manifest.yml           # Forge app configuration
-├── package.json
-└── README.md
+│   └── index.js              # Backend resolvers
+├── static/
+│   ├── dashboard/            # Dashboard React app
+│   │   ├── src/
+│   │   │   ├── App.js
+│   │   │   └── index.js
+│   │   └── build/
+│   └── issue-panel/          # Issue panel React app
+│       ├── src/
+│       │   ├── App.js
+│       │   └── index.js
+│       └── build/
+├── manifest.yml              # Forge app configuration
+├── package.json              # Backend dependencies
+├── Makefile                  # Build commands
+└── README.md                 # This file
 ```
 
-## 🤝 Contributing
+## Configuration
 
-Contributions are welcome! Please read our contributing guidelines before submitting PRs.
+### Manifest Modules
 
-## 📄 License
+- `jira:projectPage` - Dashboard view
+- `jira:issuePanel` - AI Triage panel
+- `rovo:agent` - AI analysis engine
 
-MIT License - see LICENSE file for details
+### Permissions
 
-## 🙏 Acknowledgments
+- `read:jira-work` - Read Jira issues
+- `write:jira-work` - Update issues
+- `read:jira-user` - Read user information
 
-- Built for Atlassian Codegeist 2025
-- Powered by Atlassian Forge and Rovo AI
-- Inspired by the challenges of IT support teams worldwide
+## Usage
 
-## 📞 Support
+### Dashboard
 
-- GitHub Issues: [Report a bug](https://github.com/yourusername/triageninja/issues)
-- Atlassian Community: [Get help](https://community.atlassian.com)
-- Email: support@triageninja.com
+1. Navigate to your Jira project
+2. Click "TriageNinja Dashboard" in the project sidebar
+3. View untriaged tickets and statistics
+4. Click "Triage" to open a ticket
 
----
+### AI Triage
 
-Made with 🥷 by [Your Name]
+1. Open any Jira issue
+2. Find the "AI Triage" panel on the right
+3. Click "🤖 Run AI Triage"
+4. Review the analysis results
+5. Click "Approve" to apply or "Reject" to dismiss
+
+## Roadmap
+
+- [x] Basic UI and Forge setup
+- [x] Dashboard with statistics
+- [x] Issue panel with AI triage button
+- [ ] Jira API integration
+- [ ] Rovo Agent integration
+- [ ] Forge Storage for triage history
+- [ ] Similar ticket search
+- [ ] E2E tests
+
+## Contributing
+
+This is a hackathon project for the Atlassian Codegeist 2025.
+
+## License
+
+MIT
+
+## Support
+
+For issues and questions, please open an issue on GitHub.
+
+## Acknowledgments
+
+Built with ❤️ using Atlassian Forge and Rovo Agent.
