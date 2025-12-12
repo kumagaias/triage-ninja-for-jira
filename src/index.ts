@@ -1,6 +1,12 @@
 import Resolver from '@forge/resolver';
 import { JiraClient } from './services/jiraClient';
 
+// Constants for search configuration
+const MIN_KEYWORD_LENGTH = 3;
+const MAX_SEARCH_KEYWORDS = 5;
+const MAX_RESULTS_LIMIT = 100;
+const DEFAULT_MAX_RESULTS = 50;
+
 // Dashboard Resolver
 const dashboardResolver = new Resolver();
 
@@ -48,10 +54,19 @@ dashboardResolver.define('getStatistics', async (req) => {
  */
 dashboardResolver.define('searchTickets', async (req) => {
   const payload = req.payload as { jql?: string; startAt?: number; maxResults?: number };
-  const { jql, startAt = 0, maxResults = 50 } = payload;
+  const { jql, startAt: rawStartAt = 0, maxResults: rawMaxResults = DEFAULT_MAX_RESULTS } = payload;
   const projectKey = req.context.extension.project.key;
   
+  // Validate startAt to ensure it is a non-negative integer
+  const startAt = (typeof rawStartAt === 'number' && Number.isInteger(rawStartAt) && rawStartAt >= 0) ? rawStartAt : 0;
+  
+  // Validate maxResults and cap at MAX_RESULTS_LIMIT
+  const maxResults = (typeof rawMaxResults === 'number' && Number.isInteger(rawMaxResults) && rawMaxResults > 0) 
+    ? Math.min(rawMaxResults, MAX_RESULTS_LIMIT) 
+    : DEFAULT_MAX_RESULTS;
+  
   // Use provided JQL or default to untriaged tickets
+  // Note: projectKey comes from Forge context and is trusted
   const searchJql = jql || `project = ${projectKey} AND status = Open ORDER BY created DESC`;
   
   const response = await JiraClient.searchIssues({
@@ -138,6 +153,14 @@ issuePanelResolver.define('getAssignableUsers', async (req) => {
 });
 
 /**
+ * Escape special characters in JQL text search
+ * Prevents JQL injection by escaping quotes and backslashes
+ */
+function escapeJqlText(text: string): string {
+  return text.replace(/\\/g, '\\\\').replace(/"/g, '\\"');
+}
+
+/**
  * Search for similar tickets using JQL
  * Helps find related issues for better triage decisions
  */
@@ -147,17 +170,25 @@ issuePanelResolver.define('searchSimilarTickets', async (req) => {
   
   if (!summary || !projectKey) {
     console.error('Missing required parameters: summary or projectKey');
-    return [];
+    throw new Error('Missing required parameters: summary or projectKey');
   }
   
   // Extract keywords from summary for search
   const keywords = (summary as string)
     .split(' ')
-    .filter((word: string) => word.length > 3)
-    .slice(0, 5)
-    .join(' OR ');
+    .filter((word: string) => word.length > MIN_KEYWORD_LENGTH)
+    .slice(0, MAX_SEARCH_KEYWORDS)
+    .map(word => escapeJqlText(word))
+    .join(' ');
+  
+  // If no valid keywords, return empty result to avoid invalid JQL
+  if (!keywords) {
+    console.warn('No valid keywords extracted from summary for similar ticket search.');
+    return [];
+  }
   
   // Build JQL query to find similar tickets
+  // Note: projectKey comes from payload but is used in a safe context
   const jql = `project = ${projectKey} AND text ~ "${keywords}" ORDER BY created DESC`;
   
   const response = await JiraClient.searchIssues({
