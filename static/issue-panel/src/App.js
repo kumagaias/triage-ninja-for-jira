@@ -27,6 +27,12 @@ function App() {
 
   // Run AI triage analysis
   const handleRunTriage = async () => {
+    // Defensive check: ensure issueDetails is loaded
+    if (!issueDetails) {
+      setError('Issue details not loaded. Please refresh the page.');
+      return;
+    }
+    
     setLoading(true);
     setError(null);
     try {

@@ -235,6 +235,9 @@ issuePanelResolver.define('runAITriage', async (req) => {
     });
     
     // Step 2: Get assignable users for the project
+    if (!req.context || !req.context.extension || !req.context.extension.project || !req.context.extension.project.key) {
+      throw new Error('Project key is missing from request context. Cannot proceed with AI triage.');
+    }
     const projectKey = req.context.extension.project.key;
     const usersResponse = await JiraClient.getAssignableUsers(projectKey, 50);
     const availableAgents = usersResponse.ok && usersResponse.data ? usersResponse.data.map(user => ({
@@ -244,38 +247,41 @@ issuePanelResolver.define('runAITriage', async (req) => {
       currentLoad: 0 // Will be calculated from current assignments in future
     })) : [];
     
-    // Step 3: Suggest assignee based on classification
-    const assigneeSuggestion = await RovoAgent.suggestAssignee({
-      category: classification.category,
-      subCategory: classification.subCategory,
-      availableAgents,
-      historicalData: [] // Will be populated from Forge Storage in future
-    });
-    
-    // Step 4: Search for similar tickets
-    const similarTicketsResponse = await JiraClient.searchIssues({
-      jql: `project = ${projectKey} AND status = Resolved ORDER BY created DESC`,
-      maxResults: 10,
-      fields: ['summary', 'description', 'resolution', 'resolutiondate', 'created']
-    });
-    
-    const pastTickets = similarTicketsResponse.ok && similarTicketsResponse.data ? 
-      similarTicketsResponse.data.issues.map(issue => ({
-        id: issue.key,
-        summary: issue.fields.summary,
-        description: issue.fields.description || '',
-        resolution: issue.fields.resolution?.name || 'Resolved',
-        resolutionTime: issue.fields.resolutiondate || issue.fields.created
-      })) : [];
-    
-    // Step 5: Find similar tickets using AI
-    const similarAnalysis = await RovoAgent.findSimilarTickets({
-      currentTicket: {
-        summary,
-        description: description || ''
-      },
-      pastTickets
-    });
+    // Step 3 & 4: Run assignee suggestion and similar ticket search in parallel
+    const [assigneeSuggestion, similarAnalysis] = await Promise.all([
+      // Suggest assignee based on classification
+      RovoAgent.suggestAssignee({
+        category: classification.category,
+        subCategory: classification.subCategory,
+        availableAgents,
+        historicalData: [] // Will be populated from Forge Storage in future
+      }),
+      // Search for similar tickets and analyze with AI
+      (async () => {
+        const similarTicketsResponse = await JiraClient.searchIssues({
+          jql: `project = ${projectKey} AND status = Resolved ORDER BY created DESC`,
+          maxResults: 10,
+          fields: ['summary', 'description', 'resolution', 'resolutiondate', 'created']
+        });
+        
+        const pastTickets = similarTicketsResponse.ok && similarTicketsResponse.data ? 
+          similarTicketsResponse.data.issues.map(issue => ({
+            id: issue.key,
+            summary: issue.fields.summary,
+            description: issue.fields.description || '',
+            resolution: issue.fields.resolution?.name || 'Resolved',
+            resolutionTime: issue.fields.resolutiondate || issue.fields.created
+          })) : [];
+        
+        return RovoAgent.findSimilarTickets({
+          currentTicket: {
+            summary,
+            description: description || ''
+          },
+          pastTickets
+        });
+      })()
+    ]);
     
     // Combine all results
     return {

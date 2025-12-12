@@ -1,4 +1,4 @@
-import api, { route } from '@forge/api';
+import api from '@forge/api';
 
 /**
  * Rovo Agent Service
