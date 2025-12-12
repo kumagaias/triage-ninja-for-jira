@@ -49,11 +49,12 @@ const issuePanelResolver = new Resolver();
 
 /**
  * Get issue details for AI triage
- * Fetches the current issue information
+ * Fetches the current issue information including custom fields
  */
 issuePanelResolver.define('getIssueDetails', async (req) => {
   const issueKey = req.context.extension.issue.key;
   
+  // Fetch issue with all fields including custom fields
   const response = await JiraClient.getIssue(issueKey);
   
   if (!response.ok || !response.data) {
@@ -63,13 +64,27 @@ issuePanelResolver.define('getIssueDetails', async (req) => {
   
   const data = response.data;
   
+  // Return comprehensive issue data including custom fields
   return {
     key: data.key,
+    id: data.id,
     summary: data.fields.summary,
     description: data.fields.description,
     reporter: data.fields.reporter,
+    assignee: data.fields.assignee,
     created: data.fields.created,
-    priority: data.fields.priority
+    updated: data.fields.updated,
+    priority: data.fields.priority,
+    status: data.fields.status,
+    issueType: data.fields.issuetype,
+    labels: data.fields.labels,
+    // Custom fields are accessible via fields object
+    customFields: Object.keys(data.fields)
+      .filter(key => key.startsWith('customfield_'))
+      .reduce((acc, key) => {
+        acc[key] = data.fields[key];
+        return acc;
+      }, {} as Record<string, any>)
   };
 });
 
