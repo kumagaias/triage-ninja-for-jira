@@ -42,6 +42,38 @@ dashboardResolver.define('getStatistics', async (req) => {
   };
 });
 
+/**
+ * Search tickets with pagination support
+ * Allows filtering and pagination for dashboard ticket list
+ */
+dashboardResolver.define('searchTickets', async (req) => {
+  const payload = req.payload as { jql?: string; startAt?: number; maxResults?: number };
+  const { jql, startAt = 0, maxResults = 50 } = payload;
+  const projectKey = req.context.extension.project.key;
+  
+  // Use provided JQL or default to untriaged tickets
+  const searchJql = jql || `project = ${projectKey} AND status = Open ORDER BY created DESC`;
+  
+  const response = await JiraClient.searchIssues({
+    jql: searchJql,
+    startAt,
+    maxResults,
+    fields: ['summary', 'priority', 'status', 'created', 'reporter', 'assignee']
+  });
+  
+  if (!response.ok || !response.data) {
+    console.error('Failed to search tickets:', response.error);
+    return {
+      issues: [],
+      total: 0,
+      startAt: 0,
+      maxResults
+    };
+  }
+  
+  return response.data;
+});
+
 export const dashboardHandler = dashboardResolver.getDefinitions();
 
 // Issue Panel Resolver
@@ -86,6 +118,60 @@ issuePanelResolver.define('getIssueDetails', async (req) => {
         return acc;
       }, {} as Record<string, any>)
   };
+});
+
+/**
+ * Get assignable users for the current project
+ * Returns a list of users who can be assigned to issues
+ */
+issuePanelResolver.define('getAssignableUsers', async (req) => {
+  const projectKey = req.context.extension.project.key;
+  
+  const response = await JiraClient.getAssignableUsers(projectKey, 50);
+  
+  if (!response.ok || !response.data) {
+    console.error('Failed to fetch assignable users:', response.error);
+    return [];
+  }
+  
+  return response.data;
+});
+
+/**
+ * Search for similar tickets using JQL
+ * Helps find related issues for better triage decisions
+ */
+issuePanelResolver.define('searchSimilarTickets', async (req) => {
+  const payload = req.payload as { summary?: string; projectKey?: string };
+  const { summary, projectKey } = payload;
+  
+  if (!summary || !projectKey) {
+    console.error('Missing required parameters: summary or projectKey');
+    return [];
+  }
+  
+  // Extract keywords from summary for search
+  const keywords = (summary as string)
+    .split(' ')
+    .filter((word: string) => word.length > 3)
+    .slice(0, 5)
+    .join(' OR ');
+  
+  // Build JQL query to find similar tickets
+  const jql = `project = ${projectKey} AND text ~ "${keywords}" ORDER BY created DESC`;
+  
+  const response = await JiraClient.searchIssues({
+    jql,
+    maxResults: 10,
+    fields: ['summary', 'status', 'priority', 'assignee', 'created']
+  });
+  
+  if (!response.ok || !response.data) {
+    console.error('Failed to search similar tickets:', response.error);
+    return [];
+  }
+  
+  return response.data.issues || [];
 });
 
 /**
