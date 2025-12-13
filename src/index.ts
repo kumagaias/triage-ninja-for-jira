@@ -305,7 +305,42 @@ issuePanelResolver.define('runAITriage', async (req) => {
     };
   } catch (error) {
     console.error('Error in runAITriage:', error);
-    throw new Error('AI triage analysis failed. Please try again.');
+    
+    // Provide more specific error messages based on error type
+    if (error && typeof error === 'object') {
+      const err = error as any;
+      
+      // Network or fetch error
+      if (err.name === 'FetchError' || err.message?.includes('network') || err.message?.includes('Network')) {
+        throw new Error('AI triage analysis failed due to a network error. Please check your connection and try again.');
+      }
+      
+      // Timeout error
+      if (err.name === 'TimeoutError' || err.message?.includes('timeout')) {
+        throw new Error('AI triage analysis timed out. Please try again later.');
+      }
+      
+      // Service unavailable
+      if (err.message?.includes('service unavailable') || err.message?.includes('Service Unavailable')) {
+        throw new Error('AI triage analysis failed because the AI service is unavailable. Please try again later.');
+      }
+      
+      // JSON parsing error
+      if (err.message?.includes('not valid JSON')) {
+        throw new Error('AI triage analysis returned an invalid response. Please try again.');
+      }
+      
+      // Project context error
+      if (err.message?.includes('Project key is missing')) {
+        throw new Error('Unable to access project information. Please refresh the page and try again.');
+      }
+      
+      // Generic error with error type
+      const errorType = err.name || 'UnknownError';
+      throw new Error(`AI triage analysis failed (${errorType}). Please try again.`);
+    }
+    
+    throw new Error('AI triage analysis failed due to an unknown error. Please try again.');
   }
 });
 

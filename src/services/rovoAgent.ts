@@ -136,12 +136,12 @@ export async function classifyTicket(input: ClassifyTicketInput): Promise<Classi
 }`;
 
   try {
-    // Call Rovo Agent API
+    // Call Rovo Agent API with properly escaped prompt
     const response = await api.asApp().requestGraph(`
       query {
         ai {
           chat(input: {
-            prompt: "${prompt.replace(/"/g, '\\"').replace(/\n/g, '\\n')}"
+            prompt: "${escapeGraphQL(prompt)}"
           }) {
             response
           }
@@ -206,6 +206,23 @@ function sanitizeForPrompt(data: any): string {
 }
 
 /**
+ * Escape string for safe embedding in GraphQL query
+ * Handles all special characters that could break GraphQL syntax
+ */
+function escapeGraphQL(str: string): string {
+  return str
+    .replace(/\\/g, '\\\\')   // Backslash
+    .replace(/"/g, '\\"')      // Double quote
+    .replace(/\n/g, '\\n')     // Newline
+    .replace(/\r/g, '\\r')     // Carriage return
+    .replace(/\t/g, '\\t')     // Tab
+    .replace(/\f/g, '\\f')     // Form feed
+    .replace(/\b/g, '\\b')     // Backspace
+    .replace(/\u0000/g, '')    // Null character (remove)
+    .replace(/[\u0001-\u001F\u007F-\u009F]/g, ''); // Control characters (remove)
+}
+
+/**
  * Suggest the best assignee for a ticket
  * Analyzes agent skills and workload to recommend optimal assignment
  */
@@ -256,11 +273,12 @@ JSON形式で回答:
 }`;
 
   try {
+    // Call Rovo Agent API with properly escaped prompt
     const response = await api.asApp().requestGraph(`
       query {
         ai {
           chat(input: {
-            prompt: "${prompt.replace(/"/g, '\\"').replace(/\n/g, '\\n')}"
+            prompt: "${escapeGraphQL(prompt)}"
           }) {
             response
           }
@@ -355,11 +373,12 @@ JSON形式で回答:
 }`;
 
   try {
+    // Call Rovo Agent API with properly escaped prompt
     const response = await api.asApp().requestGraph(`
       query {
         ai {
           chat(input: {
-            prompt: "${prompt.replace(/"/g, '\\"').replace(/\n/g, '\\n')}"
+            prompt: "${escapeGraphQL(prompt)}"
           }) {
             response
           }
