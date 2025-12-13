@@ -136,39 +136,78 @@ Respond in the following JSON format:
 }`;
 
   try {
-    // Call Rovo Agent API with properly escaped prompt
-    const response = await api.asApp().requestGraph(`
-      query {
-        ai {
-          chat(input: {
-            prompt: "${escapeGraphQL(prompt)}"
-          }) {
-            response
-          }
-        }
-      }
-    `);
-
-    if (!response.ok) {
-      console.error('Rovo Agent API error:', response.status, await response.text());
-      throw new Error('Failed to classify ticket');
+    // Note: Rovo Agent integration is not yet available in Forge
+    // This is a placeholder implementation that will be replaced when Rovo Agent API is available
+    // For now, we'll use a mock implementation based on keyword analysis
+    
+    console.log('Classifying ticket with mock AI (Rovo Agent not yet available)');
+    
+    // Simple keyword-based classification as fallback
+    const summaryLower = input.summary.toLowerCase();
+    const descriptionLower = (input.description || '').toLowerCase();
+    const combined = summaryLower + ' ' + descriptionLower;
+    
+    let category = 'Other';
+    let subCategory = 'General';
+    let priority: 'High' | 'Medium' | 'Low' = 'Medium';
+    let urgency: 'Urgent' | 'Normal' = 'Normal';
+    let confidence = 60;
+    let tags: string[] = [];
+    
+    // Network & Connectivity
+    if (combined.match(/vpn|wifi|network|connection|firewall|dns|proxy/)) {
+      category = 'Network & Connectivity';
+      if (combined.match(/vpn/)) subCategory = 'VPN';
+      else if (combined.match(/wifi|wireless/)) subCategory = 'WiFi';
+      else if (combined.match(/firewall/)) subCategory = 'Firewall';
+      tags.push('network');
+      confidence = 75;
     }
-
-    const data = await response.json();
-    const aiResponse = data.data?.ai?.chat?.response;
-
-    if (!aiResponse) {
-      throw new Error('No response from AI');
+    // Hardware
+    else if (combined.match(/laptop|desktop|pc|printer|monitor|keyboard|mouse|hardware/)) {
+      category = 'Hardware';
+      if (combined.match(/printer/)) subCategory = 'Printer';
+      else if (combined.match(/laptop|desktop|pc/)) subCategory = 'Computer';
+      else if (combined.match(/monitor|screen|display/)) subCategory = 'Monitor';
+      tags.push('hardware');
+      confidence = 75;
     }
-
-    // Parse AI response with error handling
-    let result;
-    try {
-      result = JSON.parse(aiResponse);
-    } catch (parseError) {
-      console.error('Failed to parse AI response as JSON:', aiResponse, parseError);
-      throw new Error('AI response was not valid JSON');
+    // Software
+    else if (combined.match(/software|application|app|program|install|update|license/)) {
+      category = 'Software';
+      if (combined.match(/license/)) subCategory = 'License';
+      else if (combined.match(/install/)) subCategory = 'Installation';
+      tags.push('software');
+      confidence = 70;
     }
+    // Account & Access
+    else if (combined.match(/password|login|access|permission|account|reset/)) {
+      category = 'Account & Access';
+      if (combined.match(/password|reset/)) subCategory = 'Password Reset';
+      else if (combined.match(/permission|access/)) subCategory = 'Permissions';
+      tags.push('access');
+      confidence = 80;
+    }
+    
+    // Priority determination
+    if (combined.match(/urgent|critical|emergency|asap|immediately/)) {
+      priority = 'High';
+      urgency = 'Urgent';
+      confidence += 10;
+    } else if (combined.match(/minor|low|enhancement|feature request/)) {
+      priority = 'Low';
+      confidence += 5;
+    }
+    
+    const result = {
+      category,
+      subCategory,
+      priority,
+      urgency,
+      confidence: Math.min(confidence, 95),
+      reasoning: `Classified based on keywords in summary and description. Category: ${category}, Priority: ${priority}`,
+      tags
+    };
     
     return {
       category: result.category || 'Uncategorized',
@@ -227,98 +266,41 @@ function escapeGraphQL(str: string): string {
  * Analyzes agent skills and workload to recommend optimal assignment
  */
 export async function suggestAssignee(input: SuggestAssigneeInput): Promise<SuggestAssigneeOutput> {
-  // Format available agents in a safe, readable way
-  const formattedAgents = input.availableAgents
-    .map((agent, index) => 
-      `${index + 1}. ${sanitizeForPrompt(agent.name)} (ID: ${sanitizeForPrompt(agent.id)})
-   Current workload: ${agent.currentLoad} tickets`
-    )
-    .join('\n');
-
-  // Format historical data in a safe, readable way
-  const formattedHistory = input.historicalData
-    .map((data, index) => 
-      `${index + 1}. ${sanitizeForPrompt(data.agent)}
-   Category: ${sanitizeForPrompt(data.category)}
-   Avg resolution time: ${sanitizeForPrompt(data.avgResolutionTime)}
-   Success rate: ${data.successRate * 100}%`
-    )
-    .join('\n');
-
-  const prompt = `Based on the following information, select the best assignee for this ticket:
-
-Category: ${sanitizeForPrompt(input.category)}
-Subcategory: ${sanitizeForPrompt(input.subCategory)}
-
-Available Assignees:
-${formattedAgents}
-
-Historical Performance:
-${formattedHistory}
-
-Respond in JSON format:
-{
-  "assignee": "Assignee name",
-  "assigneeId": "Assignee ID",
-  "reason": "Reason for selection",
-  "confidence": 0-100,
-  "estimatedTime": "Estimated resolution time",
-  "alternatives": [
-    {
-      "assignee": "Alternative assignee name",
-      "assigneeId": "Alternative assignee ID",
-      "reason": "Reason"
-    }
-  ]
-}`;
-
+  // Mock implementation until Rovo Agent API is available
   try {
-    // Call Rovo Agent API with properly escaped prompt
-    const response = await api.asApp().requestGraph(`
-      query {
-        ai {
-          chat(input: {
-            prompt: "${escapeGraphQL(prompt)}"
-          }) {
-            response
-          }
-        }
-      }
-    `);
-
-    if (!response.ok) {
-      console.error('Rovo Agent API error:', response.status, await response.text());
-      throw new Error('Failed to suggest assignee');
-    }
-
-    const data = await response.json();
-    const aiResponse = data.data?.ai?.chat?.response;
-
-    if (!aiResponse) {
-      throw new Error('No response from AI');
-    }
-
-    // Parse AI response with error handling
-    let result;
-    try {
-      result = JSON.parse(aiResponse);
-    } catch (parseError) {
-      console.error('Failed to parse AI response as JSON:', aiResponse, parseError);
-      throw new Error('AI response was not valid JSON');
+    console.log('Suggesting assignee with mock logic (Rovo Agent not yet available)');
+    
+    // Select assignee based on lowest workload
+    if (input.availableAgents.length === 0) {
+      return {
+        assignee: 'Unassigned',
+        assigneeId: '',
+        reason: 'No available agents found',
+        confidence: 0,
+        estimatedTime: 'Unknown',
+        alternatives: []
+      };
     }
     
+    // Sort by workload (ascending)
+    const sortedAgents = [...input.availableAgents].sort((a, b) => a.currentLoad - b.currentLoad);
+    const bestAgent = sortedAgents[0];
+    const alternatives = sortedAgents.slice(1, 3).map(agent => ({
+      assignee: agent.name,
+      assigneeId: agent.id,
+      reason: `Current workload: ${agent.currentLoad} tickets`
+    }));
+    
     return {
-      assignee: result.assignee || 'Unassigned',
-      assigneeId: result.assigneeId || '',
-      reason: result.reason || 'No specific reason',
-      confidence: result.confidence || 50,
-      estimatedTime: result.estimatedTime || 'Unknown',
-      alternatives: result.alternatives || []
+      assignee: bestAgent.name,
+      assigneeId: bestAgent.id,
+      reason: `Selected based on lowest current workload (${bestAgent.currentLoad} tickets)`,
+      confidence: 70,
+      estimatedTime: '2-4 hours',
+      alternatives
     };
   } catch (error) {
     console.error('Error in suggestAssignee:', error);
-    
-    // Return fallback result
     return {
       assignee: 'Unassigned',
       assigneeId: '',
@@ -330,93 +312,77 @@ Respond in JSON format:
   }
 }
 
+
+
 /**
  * Find similar tickets based on content analysis
  * Uses AI to identify semantically similar past tickets
  */
 export async function findSimilarTickets(input: FindSimilarInput): Promise<FindSimilarOutput> {
-  // Format past tickets in a more readable way for the AI with sanitization
-  const formattedPastTickets = input.pastTickets
-    .map((ticket, index) => 
-      `${index + 1}. ${sanitizeForPrompt(ticket.id)}
-   Summary: ${sanitizeForPrompt(ticket.summary)}
-   Description: ${sanitizeForPrompt(ticket.description.substring(0, 200))}${ticket.description.length > 200 ? '...' : ''}
-   Resolution: ${sanitizeForPrompt(ticket.resolution)}
-   Resolution time: ${sanitizeForPrompt(ticket.resolutionTime)}`
-    )
-    .join('\n\n');
-
-  const prompt = `Analyze the past tickets and identify the top 3 most similar tickets to the current one:
-
-Current Ticket:
-- Summary: ${sanitizeForPrompt(input.currentTicket.summary)}
-- Description: ${sanitizeForPrompt(input.currentTicket.description || 'None')}
-
-Past Tickets:
-${formattedPastTickets}
-
-Respond in JSON format:
-{
-  "similarTickets": [
-    {
-      "id": "Ticket ID",
-      "similarity": 0-1 numeric value,
-      "solution": "Summary of resolution",
-      "resolutionTime": "Resolution time"
-    }
-  ],
-  "suggestedActions": [
-    "Suggested action 1",
-    "Suggested action 2"
-  ]
-}`;
-
+  // Mock implementation until Rovo Agent API is available
   try {
-    // Call Rovo Agent API with properly escaped prompt
-    const response = await api.asApp().requestGraph(`
-      query {
-        ai {
-          chat(input: {
-            prompt: "${escapeGraphQL(prompt)}"
-          }) {
-            response
-          }
-        }
-      }
-    `);
-
-    if (!response.ok) {
-      console.error('Rovo Agent API error:', response.status, await response.text());
-      throw new Error('Failed to find similar tickets');
-    }
-
-    const data = await response.json();
-    const aiResponse = data.data?.ai?.chat?.response;
-
-    if (!aiResponse) {
-      throw new Error('No response from AI');
-    }
-
-    // Parse AI response with error handling
-    let result;
-    try {
-      result = JSON.parse(aiResponse);
-    } catch (parseError) {
-      console.error('Failed to parse AI response as JSON:', aiResponse, parseError);
-      throw new Error('AI response was not valid JSON');
+    console.log('Finding similar tickets with mock logic (Rovo Agent not yet available)');
+    
+    if (input.pastTickets.length === 0) {
+      return {
+        similarTickets: [],
+        suggestedActions: ['No similar tickets found. This appears to be a new type of issue.']
+      };
     }
     
+    // Simple keyword matching for similarity
+    const currentSummaryWords = input.currentTicket.summary.toLowerCase().split(/\s+/);
+    const currentDescWords = (input.currentTicket.description || '').toLowerCase().split(/\s+/);
+    const currentWords = new Set([...currentSummaryWords, ...currentDescWords]);
+    
+    const scoredTickets = input.pastTickets.map(ticket => {
+      const ticketSummaryWords = ticket.summary.toLowerCase().split(/\s+/);
+      const ticketDescWords = (ticket.description || '').toLowerCase().split(/\s+/);
+      const ticketWords = new Set([...ticketSummaryWords, ...ticketDescWords]);
+      
+      // Calculate similarity based on common words
+      let commonWords = 0;
+      currentWords.forEach(word => {
+        if (ticketWords.has(word) && word.length > 3) {
+          commonWords++;
+        }
+      });
+      
+      const similarity = Math.min(commonWords / Math.max(currentWords.size, 1), 1);
+      
+      return {
+        id: ticket.id,
+        similarity,
+        solution: ticket.resolution,
+        resolutionTime: ticket.resolutionTime
+      };
+    });
+    
+    // Sort by similarity and take top 3
+    const similarTickets = scoredTickets
+      .filter(t => t.similarity > 0.1)
+      .sort((a, b) => b.similarity - a.similarity)
+      .slice(0, 3);
+    
+    const suggestedActions = similarTickets.length > 0
+      ? [
+          `Review similar ticket ${similarTickets[0].id} for potential solutions`,
+          'Check if the same resolution approach can be applied',
+          'Contact the previous assignee for insights'
+        ]
+      : ['No similar tickets found. Treat as a new issue type.'];
+    
     return {
-      similarTickets: result.similarTickets || [],
-      suggestedActions: result.suggestedActions || []
+      similarTickets,
+      suggestedActions
     };
   } catch (error) {
     console.error('Error in findSimilarTickets:', error);
-    
-    // Return fallback result
     return {
       similarTickets: [],
       suggestedActions: ['AI analysis failed, manual review recommended']
     };
   }
 }
+
+

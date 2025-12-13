@@ -129,17 +129,10 @@ export class JiraClient {
     maxResults: number = 50
   ): Promise<ApiResponse<JiraUser[]>> {
     try {
-      // Build query string separately from route tag
-      const queryParams = new URLSearchParams({
-        project: projectKey,
-        maxResults: String(maxResults),
-      }).toString();
-      
-      const url = `/rest/api/3/user/assignable/search?${queryParams}`;
-      
+      // Use route template with direct parameter interpolation
       const response = await api
         .asUser()
-        .requestJira(route`${url}` as any);
+        .requestJira(route`/rest/api/3/user/assignable/search?project=${projectKey}&maxResults=${maxResults}`);
 
       return this.handleResponse<JiraUser[]>(response);
     } catch (error) {
