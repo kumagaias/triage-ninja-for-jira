@@ -1,5 +1,6 @@
 import Resolver from '@forge/resolver';
 import { JiraClient } from './services/jiraClient';
+import * as RovoAgent from './services/rovoAgent';
 
 // Constants for search configuration
 const MIN_KEYWORD_LENGTH = 3;
@@ -207,25 +208,140 @@ issuePanelResolver.define('searchSimilarTickets', async (req) => {
 
 /**
  * Trigger AI triage analysis
- * This will be connected to Rovo Agent in later tasks
+ * Uses Rovo Agent to classify ticket, suggest assignee, and find similar tickets
  */
 issuePanelResolver.define('runAITriage', async (req) => {
-  // Mock AI analysis result for now
-  return {
-    category: 'Network & Connectivity',
-    subCategory: 'VPN Issues',
-    priority: 'High',
-    urgency: 'Urgent',
-    confidence: 94,
-    reasoning: 'Based on keywords: VPN, connection, remote access',
-    tags: ['vpn', 'remote-work', 'connectivity'],
-    suggestedAssignee: {
-      name: 'Alex Chen',
-      reason: 'VPN specialist, 95% success rate',
-      estimatedTime: '25min'
-    },
-    similarTickets: []
+  const payload = req.payload as { 
+    issueKey: string;
+    summary: string;
+    description: string;
+    reporter: string;
+    created: string;
   };
+  
+  const { issueKey, summary, description, reporter, created } = payload;
+  
+  if (!issueKey || !summary) {
+    throw new Error('Missing required parameters: issueKey or summary');
+  }
+  
+  try {
+    // Step 1: Classify the ticket
+    const classification = await RovoAgent.classifyTicket({
+      summary,
+      description: description || '',
+      reporter: reporter || 'Unknown',
+      created: created || new Date().toISOString()
+    });
+    
+    // Step 2: Get assignable users for the project
+    if (!req.context || !req.context.extension || !req.context.extension.project || !req.context.extension.project.key) {
+      throw new Error('Project key is missing from request context. Cannot proceed with AI triage.');
+    }
+    const projectKey = req.context.extension.project.key;
+    const usersResponse = await JiraClient.getAssignableUsers(projectKey, 50);
+    const availableAgents = usersResponse.ok && usersResponse.data ? usersResponse.data.map(user => ({
+      name: user.displayName,
+      id: user.accountId,
+      skills: [], // Will be populated from historical data in future
+      currentLoad: 0 // Will be calculated from current assignments in future
+    })) : [];
+    
+    // Step 3 & 4: Run assignee suggestion and similar ticket search in parallel
+    const [assigneeSuggestion, similarAnalysis] = await Promise.all([
+      // Suggest assignee based on classification
+      RovoAgent.suggestAssignee({
+        category: classification.category,
+        subCategory: classification.subCategory,
+        availableAgents,
+        historicalData: [] // Will be populated from Forge Storage in future
+      }),
+      // Search for similar tickets and analyze with AI
+      (async () => {
+        const similarTicketsResponse = await JiraClient.searchIssues({
+          jql: `project = ${projectKey} AND status = Resolved ORDER BY created DESC`,
+          maxResults: 10,
+          fields: ['summary', 'description', 'resolution', 'resolutiondate', 'created']
+        });
+        
+        const pastTickets = similarTicketsResponse.ok && similarTicketsResponse.data ? 
+          similarTicketsResponse.data.issues.map(issue => ({
+            id: issue.key,
+            summary: issue.fields.summary,
+            description: issue.fields.description || '',
+            resolution: issue.fields.resolution?.name || 'Resolved',
+            resolutionTime: issue.fields.resolutiondate || issue.fields.created
+          })) : [];
+        
+        return RovoAgent.findSimilarTickets({
+          currentTicket: {
+            summary,
+            description: description || ''
+          },
+          pastTickets
+        });
+      })()
+    ]);
+    
+    // Combine all results
+    return {
+      category: classification.category,
+      subCategory: classification.subCategory,
+      priority: classification.priority,
+      urgency: classification.urgency,
+      confidence: classification.confidence,
+      reasoning: classification.reasoning,
+      tags: classification.tags,
+      suggestedAssignee: {
+        name: assigneeSuggestion.assignee,
+        id: assigneeSuggestion.assigneeId,
+        reason: assigneeSuggestion.reason,
+        estimatedTime: assigneeSuggestion.estimatedTime,
+        confidence: assigneeSuggestion.confidence,
+        alternatives: assigneeSuggestion.alternatives
+      },
+      similarTickets: similarAnalysis.similarTickets,
+      suggestedActions: similarAnalysis.suggestedActions
+    };
+  } catch (error) {
+    console.error('Error in runAITriage:', error);
+    
+    // Provide more specific error messages based on error type
+    if (error && typeof error === 'object') {
+      const err = error as any;
+      
+      // Network or fetch error
+      if (err.name === 'FetchError' || err.message?.includes('network') || err.message?.includes('Network')) {
+        throw new Error('AI triage analysis failed due to a network error. Please check your connection and try again.');
+      }
+      
+      // Timeout error
+      if (err.name === 'TimeoutError' || err.message?.includes('timeout')) {
+        throw new Error('AI triage analysis timed out. Please try again later.');
+      }
+      
+      // Service unavailable
+      if (err.message?.includes('service unavailable') || err.message?.includes('Service Unavailable')) {
+        throw new Error('AI triage analysis failed because the AI service is unavailable. Please try again later.');
+      }
+      
+      // JSON parsing error
+      if (err.message?.includes('not valid JSON')) {
+        throw new Error('AI triage analysis returned an invalid response. Please try again.');
+      }
+      
+      // Project context error
+      if (err.message?.includes('Project key is missing')) {
+        throw new Error('Unable to access project information. Please refresh the page and try again.');
+      }
+      
+      // Generic error with error type
+      const errorType = err.name || 'UnknownError';
+      throw new Error(`AI triage analysis failed (${errorType}). Please try again.`);
+    }
+    
+    throw new Error('AI triage analysis failed due to an unknown error. Please try again.');
+  }
 });
 
 export const issuePanelHandler = issuePanelResolver.getDefinitions();
