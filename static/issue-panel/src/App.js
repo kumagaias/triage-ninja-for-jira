@@ -513,18 +513,22 @@ function App() {
       
       {/* Confirmation Dialog */}
       {showConfirmDialog && (
-        <div style={{
-          position: 'fixed',
-          top: 0,
-          left: 0,
-          right: 0,
-          bottom: 0,
-          backgroundColor: 'rgba(9, 30, 66, 0.54)',
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-          zIndex: 1000
-        }}>
+        <div 
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="confirm-dialog-title"
+          style={{
+            position: 'fixed',
+            top: 0,
+            left: 0,
+            right: 0,
+            bottom: 0,
+            backgroundColor: 'rgba(9, 30, 66, 0.54)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            zIndex: 1000
+          }}>
           <div style={{
             backgroundColor: 'white',
             borderRadius: '3px',
@@ -533,12 +537,14 @@ function App() {
             width: '90%',
             boxShadow: '0 8px 16px rgba(9, 30, 66, 0.25)'
           }}>
-            <h3 style={{
-              margin: '0 0 12px 0',
-              fontSize: '16px',
-              color: '#172B4D',
-              fontWeight: 'bold'
-            }}>
+            <h3 
+              id="confirm-dialog-title"
+              style={{
+                margin: '0 0 12px 0',
+                fontSize: '16px',
+                color: '#172B4D',
+                fontWeight: 'bold'
+              }}>
               Confirm Triage Application
             </h3>
             <p style={{
@@ -562,6 +568,7 @@ function App() {
             <div style={{ display: 'flex', gap: '8px', justifyContent: 'flex-end' }}>
               <button
                 onClick={handleApproveCancel}
+                aria-label="Cancel triage application"
                 style={{
                   padding: '8px 16px',
                   backgroundColor: '#DFE1E6',
@@ -578,6 +585,7 @@ function App() {
               <button
                 onClick={handleApproveConfirm}
                 className="approve-button"
+                aria-label="Confirm triage application"
                 style={{
                   padding: '8px 16px',
                   backgroundColor: '#0052CC',
