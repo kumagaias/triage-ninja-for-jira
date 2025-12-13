@@ -107,6 +107,23 @@ export async function classifyTicket(input: ClassifyTicketInput): Promise<Classi
 - 報告者: ${input.reporter}
 - 作成日時: ${input.created}
 
+カテゴリー例:
+- Network & Connectivity (VPN, WiFi, Firewall)
+- Hardware (PC, Printer, Monitor, Keyboard)
+- Software (Application, OS, License)
+- Account & Access (Password, Permissions, Login)
+- Email & Communication (Outlook, Teams, Slack)
+- Other (その他)
+
+優先度の判定基準:
+- High: 業務に重大な影響、多数のユーザーに影響
+- Medium: 業務に影響があるが回避策あり
+- Low: 軽微な問題、改善要望
+
+緊急度の判定基準:
+- Urgent: 即座の対応が必要
+- Normal: 通常の対応で問題なし
+
 以下のJSON形式で回答してください:
 {
   "category": "カテゴリー名",
@@ -114,7 +131,7 @@ export async function classifyTicket(input: ClassifyTicketInput): Promise<Classi
   "priority": "High/Medium/Low",
   "urgency": "Urgent/Normal",
   "confidence": 0-100の数値,
-  "reasoning": "判定理由",
+  "reasoning": "判定理由（なぜこのカテゴリー・優先度・緊急度と判断したか）",
   "tags": ["タグ1", "タグ2"]
 }`;
 
