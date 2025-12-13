@@ -53,6 +53,8 @@ function App() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
   const [successMessage, setSuccessMessage] = useState(null);
+  const [showConfirmDialog, setShowConfirmDialog] = useState(false);
+  const [progress, setProgress] = useState(0);
 
   // Fetch issue details on component mount
   useEffect(() => {
@@ -68,7 +70,7 @@ function App() {
     fetchIssueDetails();
   }, []);
 
-  // Run AI triage analysis
+  // Run AI triage analysis with timeout and progress
   const handleRunTriage = async () => {
     // Defensive check: ensure issueDetails is loaded
     if (!issueDetails) {
@@ -78,6 +80,24 @@ function App() {
     
     setLoading(true);
     setError(null);
+    setProgress(0);
+    
+    // Progress simulation
+    const progressInterval = setInterval(() => {
+      setProgress(prev => {
+        if (prev >= 90) return prev;
+        return prev + 10;
+      });
+    }, 300);
+    
+    // Timeout after 30 seconds
+    const timeoutId = setTimeout(() => {
+      clearInterval(progressInterval);
+      setLoading(false);
+      setProgress(0);
+      setError('Analysis timed out after 30 seconds. Please try again.');
+    }, 30000);
+    
     try {
       // Pass issue details to the AI triage function
       const result = await invoke('runAITriage', {
@@ -87,17 +107,30 @@ function App() {
         reporter: issueDetails.reporter?.displayName || 'Unknown',
         created: issueDetails.created
       });
+      
+      clearTimeout(timeoutId);
+      clearInterval(progressInterval);
+      setProgress(100);
       setTriageResult(result);
     } catch (err) {
+      clearTimeout(timeoutId);
+      clearInterval(progressInterval);
       console.error('Failed to run AI triage:', err);
       setError('Failed to analyze ticket. Please try again.');
     } finally {
       setLoading(false);
+      setTimeout(() => setProgress(0), 500);
     }
   };
 
-  // Handle approve action
-  const handleApprove = async () => {
+  // Show confirmation dialog
+  const handleApproveClick = () => {
+    setShowConfirmDialog(true);
+  };
+
+  // Handle approve action after confirmation
+  const handleApproveConfirm = async () => {
+    setShowConfirmDialog(false);
     setLoading(true);
     setError(null);
     
@@ -130,6 +163,11 @@ function App() {
     } finally {
       setLoading(false);
     }
+  };
+  
+  // Cancel confirmation dialog
+  const handleApproveCancel = () => {
+    setShowConfirmDialog(false);
   };
 
   // Handle reject action
@@ -197,6 +235,34 @@ function App() {
           >
             {loading ? '🤖 Analyzing...' : '🤖 Run AI Triage'}
           </button>
+          
+          {/* Progress Bar */}
+          {loading && progress > 0 && (
+            <div style={{ marginTop: '12px' }}>
+              <div style={{
+                width: '100%',
+                height: '4px',
+                backgroundColor: '#DFE1E6',
+                borderRadius: '2px',
+                overflow: 'hidden'
+              }}>
+                <div style={{
+                  width: `${progress}%`,
+                  height: '100%',
+                  backgroundColor: '#0052CC',
+                  transition: 'width 0.3s ease'
+                }} />
+              </div>
+              <div style={{
+                fontSize: '11px',
+                color: '#5E6C84',
+                marginTop: '4px',
+                textAlign: 'center'
+              }}>
+                Analyzing... {progress}%
+              </div>
+            </div>
+          )}
         </div>
       )}
 
@@ -403,7 +469,7 @@ function App() {
           {/* Action Buttons */}
           <div style={{ marginTop: '20px', display: 'flex', gap: '8px' }} aria-live="polite">
             <button
-              onClick={handleApprove}
+              onClick={handleApproveClick}
               disabled={loading}
               className="approve-button"
               aria-busy={loading}
@@ -441,6 +507,91 @@ function App() {
             >
               Reject
             </button>
+          </div>
+        </div>
+      )}
+      
+      {/* Confirmation Dialog */}
+      {showConfirmDialog && (
+        <div style={{
+          position: 'fixed',
+          top: 0,
+          left: 0,
+          right: 0,
+          bottom: 0,
+          backgroundColor: 'rgba(9, 30, 66, 0.54)',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          zIndex: 1000
+        }}>
+          <div style={{
+            backgroundColor: 'white',
+            borderRadius: '3px',
+            padding: '20px',
+            maxWidth: '400px',
+            width: '90%',
+            boxShadow: '0 8px 16px rgba(9, 30, 66, 0.25)'
+          }}>
+            <h3 style={{
+              margin: '0 0 12px 0',
+              fontSize: '16px',
+              color: '#172B4D',
+              fontWeight: 'bold'
+            }}>
+              Confirm Triage Application
+            </h3>
+            <p style={{
+              margin: '0 0 16px 0',
+              fontSize: '13px',
+              color: '#5E6C84',
+              lineHeight: '1.5'
+            }}>
+              Are you sure you want to apply the following changes to this issue?
+            </p>
+            <ul style={{
+              margin: '0 0 20px 0',
+              paddingLeft: '20px',
+              fontSize: '13px',
+              color: '#172B4D'
+            }}>
+              <li>Priority: <strong>{triageResult.priority}</strong></li>
+              <li>Assignee: <strong>{triageResult.suggestedAssignee.name}</strong></li>
+              <li>Labels: <strong>{triageResult.category}, {triageResult.subCategory}</strong></li>
+            </ul>
+            <div style={{ display: 'flex', gap: '8px', justifyContent: 'flex-end' }}>
+              <button
+                onClick={handleApproveCancel}
+                style={{
+                  padding: '8px 16px',
+                  backgroundColor: '#DFE1E6',
+                  color: '#172B4D',
+                  border: 'none',
+                  borderRadius: '3px',
+                  fontSize: '13px',
+                  fontWeight: 'bold',
+                  cursor: 'pointer'
+                }}
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleApproveConfirm}
+                className="approve-button"
+                style={{
+                  padding: '8px 16px',
+                  backgroundColor: '#0052CC',
+                  color: 'white',
+                  border: 'none',
+                  borderRadius: '3px',
+                  fontSize: '13px',
+                  fontWeight: 'bold',
+                  cursor: 'pointer'
+                }}
+              >
+                Confirm
+              </button>
+            </div>
           </div>
         </div>
       )}
