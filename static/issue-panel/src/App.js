@@ -1,6 +1,48 @@
 import React, { useEffect, useState } from 'react';
 import { invoke } from '@forge/bridge';
 
+// Helper function to get confidence color based on score
+const getConfidenceColor = (confidence) => {
+  if (confidence >= 80) {
+    return {
+      background: '#E3FCEF',
+      border: '#00875A'
+    };
+  } else if (confidence >= 60) {
+    return {
+      background: '#FFF0B3',
+      border: '#FF991F'
+    };
+  } else {
+    return {
+      background: '#FFEBE6',
+      border: '#FF5630'
+    };
+  }
+};
+
+// Add CSS for hover effects
+const styles = `
+  .run-triage-button:hover:not(:disabled) {
+    background-color: #0747A6 !important;
+  }
+  
+  .approve-button:hover:not(:disabled) {
+    background-color: #0747A6 !important;
+  }
+  
+  .reject-button:hover:not(:disabled) {
+    background-color: #C1C7D0 !important;
+  }
+`;
+
+// Inject styles into document
+if (typeof document !== 'undefined') {
+  const styleSheet = document.createElement('style');
+  styleSheet.textContent = styles;
+  document.head.appendChild(styleSheet);
+}
+
 /**
  * AI Triage Panel Component
  * Displays AI-powered triage analysis for Jira issues
@@ -105,28 +147,52 @@ function App() {
   }
 
   return (
-    <div style={{ padding: '20px', fontFamily: 'Arial, sans-serif' }}>
-      <h2 style={{ marginTop: 0, color: '#172B4D' }}>🥷 AI Triage</h2>
+    <div style={{ padding: '16px', fontFamily: 'Arial, sans-serif' }}>
+      <h2 style={{ 
+        marginTop: 0, 
+        color: '#172B4D', 
+        fontSize: '18px',
+        display: 'flex',
+        alignItems: 'center',
+        gap: '8px'
+      }}>
+        <span>🥷</span>
+        <span>AI Triage</span>
+      </h2>
       
       {!triageResult && (
         <div>
-          <p style={{ color: '#5E6C84' }}>
-            Status: <strong>Not Triaged</strong>
-          </p>
+          <div style={{
+            padding: '10px',
+            backgroundColor: '#F4F5F7',
+            borderRadius: '3px',
+            marginBottom: '12px',
+            fontSize: '13px'
+          }}>
+            <div style={{ color: '#5E6C84', marginBottom: '4px' }}>
+              Status:
+            </div>
+            <div style={{ color: '#172B4D', fontWeight: 'bold' }}>
+              Not Triaged
+            </div>
+          </div>
           <button
             onClick={handleRunTriage}
             disabled={loading}
+            className="run-triage-button"
+            aria-busy={loading}
             style={{
               width: '100%',
               padding: '12px',
               backgroundColor: loading ? '#DFE1E6' : '#0052CC',
-              color: 'white',
+              color: loading ? '#5E6C84' : 'white',
               border: 'none',
               borderRadius: '3px',
               fontSize: '14px',
               fontWeight: 'bold',
               cursor: loading ? 'not-allowed' : 'pointer',
-              marginTop: '10px'
+              marginTop: '10px',
+              transition: 'background-color 0.2s'
             }}
           >
             {loading ? '🤖 Analyzing...' : '🤖 Run AI Triage'}
@@ -189,109 +255,188 @@ function App() {
       )}
 
       {triageResult && (
-        <div style={{ marginTop: '20px' }}>
+        <div style={{ marginTop: '16px' }}>
+          {/* Confidence Score */}
           <div style={{
-            padding: '10px',
-            backgroundColor: '#E3FCEF',
+            padding: '12px',
+            backgroundColor: getConfidenceColor(triageResult.confidence).background,
             borderRadius: '3px',
-            marginBottom: '15px'
+            marginBottom: '15px',
+            border: `1px solid ${getConfidenceColor(triageResult.confidence).border}`
           }}>
-            <strong>Confidence:</strong> {triageResult.confidence}%
-          </div>
-
-          <div style={{ marginBottom: '15px' }}>
-            <h3 style={{ fontSize: '14px', color: '#172B4D' }}>📁 Category</h3>
-            <p style={{ margin: '5px 0', color: '#5E6C84' }}>
-              {triageResult.category} &gt; {triageResult.subCategory}
-            </p>
-          </div>
-
-          <div style={{ marginBottom: '15px' }}>
-            <h3 style={{ fontSize: '14px', color: '#172B4D' }}>⚡ Priority & Urgency</h3>
-            <p style={{ margin: '5px 0', color: '#5E6C84' }}>
-              Priority: <strong>{triageResult.priority}</strong><br/>
-              Urgency: <strong>{triageResult.urgency}</strong>
-            </p>
-          </div>
-
-          <div style={{ marginBottom: '15px' }}>
-            <h3 style={{ fontSize: '14px', color: '#172B4D' }}>👤 Suggested Assignee</h3>
-            <div style={{
-              padding: '10px',
-              backgroundColor: '#F4F5F7',
-              borderRadius: '3px'
-            }}>
-              <p style={{ margin: '5px 0', fontWeight: 'bold' }}>
-                {triageResult.suggestedAssignee.name}
-              </p>
-              <p style={{ margin: '5px 0', fontSize: '12px', color: '#5E6C84' }}>
-                ✓ {triageResult.suggestedAssignee.reason}
-              </p>
-              <p style={{ margin: '5px 0', fontSize: '12px', color: '#5E6C84' }}>
-                ⏱️ Avg resolution: {triageResult.suggestedAssignee.estimatedTime}
-              </p>
+            <div style={{ fontSize: '12px', color: '#5E6C84', marginBottom: '4px' }}>
+              Confidence Score
+            </div>
+            <div style={{ fontSize: '20px', fontWeight: 'bold', color: '#172B4D' }}>
+              {triageResult.confidence}%
             </div>
           </div>
 
+          {/* Category */}
+          <div style={{ marginBottom: '15px' }}>
+            <h3 style={{ fontSize: '13px', color: '#172B4D', marginBottom: '8px', fontWeight: 'bold' }}>
+              📁 Category
+            </h3>
+            <div style={{
+              padding: '8px',
+              backgroundColor: '#F4F5F7',
+              borderRadius: '3px',
+              fontSize: '13px'
+            }}>
+              <span style={{ color: '#172B4D', fontWeight: '500' }}>
+                {triageResult.category}
+              </span>
+              <span style={{ color: '#5E6C84', margin: '0 6px' }}>›</span>
+              <span style={{ color: '#5E6C84' }}>
+                {triageResult.subCategory}
+              </span>
+            </div>
+          </div>
+
+          {/* Priority & Urgency */}
+          <div style={{ marginBottom: '15px' }}>
+            <h3 style={{ fontSize: '13px', color: '#172B4D', marginBottom: '8px', fontWeight: 'bold' }}>
+              ⚡ Priority & Urgency
+            </h3>
+            <div style={{ display: 'flex', gap: '8px' }}>
+              <div style={{
+                flex: 1,
+                padding: '8px',
+                backgroundColor: '#F4F5F7',
+                borderRadius: '3px',
+                fontSize: '12px'
+              }}>
+                <div style={{ color: '#5E6C84', marginBottom: '4px' }}>Priority</div>
+                <div style={{ color: '#172B4D', fontWeight: 'bold' }}>{triageResult.priority}</div>
+              </div>
+              <div style={{
+                flex: 1,
+                padding: '8px',
+                backgroundColor: '#F4F5F7',
+                borderRadius: '3px',
+                fontSize: '12px'
+              }}>
+                <div style={{ color: '#5E6C84', marginBottom: '4px' }}>Urgency</div>
+                <div style={{ color: '#172B4D', fontWeight: 'bold' }}>{triageResult.urgency}</div>
+              </div>
+            </div>
+          </div>
+
+          {/* Suggested Assignee */}
+          <div style={{ marginBottom: '15px' }}>
+            <h3 style={{ fontSize: '13px', color: '#172B4D', marginBottom: '8px', fontWeight: 'bold' }}>
+              👤 Suggested Assignee
+            </h3>
+            <div style={{
+              padding: '10px',
+              backgroundColor: '#DEEBFF',
+              borderRadius: '3px',
+              border: '1px solid #B3D4FF'
+            }}>
+              <div style={{ fontSize: '14px', fontWeight: 'bold', color: '#172B4D', marginBottom: '6px' }}>
+                {triageResult.suggestedAssignee.name}
+              </div>
+              <div style={{ fontSize: '12px', color: '#5E6C84', marginBottom: '4px' }}>
+                ✓ {triageResult.suggestedAssignee.reason}
+              </div>
+              <div style={{ fontSize: '11px', color: '#5E6C84' }}>
+                ⏱️ Avg resolution: {triageResult.suggestedAssignee.estimatedTime}
+              </div>
+            </div>
+          </div>
+
+          {/* Similar Tickets */}
           {triageResult.similarTickets && triageResult.similarTickets.length > 0 && (
             <div style={{ marginBottom: '15px' }}>
-              <h3 style={{ fontSize: '14px', color: '#172B4D' }}>🔍 Similar Tickets ({triageResult.similarTickets.length})</h3>
+              <h3 style={{ fontSize: '13px', color: '#172B4D', marginBottom: '8px', fontWeight: 'bold' }}>
+                🔍 Similar Tickets ({triageResult.similarTickets.length})
+              </h3>
               {triageResult.similarTickets.slice(0, 3).map((ticket, index) => (
                 <div key={index} style={{
                   padding: '8px',
                   backgroundColor: '#F4F5F7',
                   borderRadius: '3px',
-                  marginBottom: '5px',
-                  fontSize: '12px'
+                  marginBottom: '6px',
+                  fontSize: '11px',
+                  border: '1px solid #DFE1E6'
                 }}>
-                  <p style={{ margin: '2px 0', fontWeight: 'bold' }}>
-                    {ticket.id} ({Math.round(ticket.similarity * 100)}% similar)
-                  </p>
-                  <p style={{ margin: '2px 0', color: '#5E6C84' }}>
+                  <div style={{ fontWeight: 'bold', color: '#172B4D', marginBottom: '4px' }}>
+                    {ticket.id} 
+                    <span style={{ 
+                      marginLeft: '6px',
+                      padding: '2px 6px',
+                      backgroundColor: '#E3FCEF',
+                      borderRadius: '3px',
+                      fontSize: '10px',
+                      color: '#00875A'
+                    }}>
+                      {Math.round(ticket.similarity * 100)}% similar
+                    </span>
+                  </div>
+                  <div style={{ color: '#5E6C84' }}>
                     {ticket.solution}
-                  </p>
+                  </div>
                 </div>
               ))}
             </div>
           )}
 
+          {/* Reasoning */}
           {triageResult.reasoning && (
             <div style={{ marginBottom: '15px' }}>
-              <h3 style={{ fontSize: '14px', color: '#172B4D' }}>💡 Reasoning</h3>
-              <p style={{ margin: '5px 0', fontSize: '12px', color: '#5E6C84' }}>
+              <h3 style={{ fontSize: '13px', color: '#172B4D', marginBottom: '8px', fontWeight: 'bold' }}>
+                💡 Reasoning
+              </h3>
+              <div style={{
+                padding: '10px',
+                backgroundColor: '#F4F5F7',
+                borderRadius: '3px',
+                fontSize: '12px',
+                color: '#5E6C84',
+                lineHeight: '1.5'
+              }}>
                 {triageResult.reasoning}
-              </p>
+              </div>
             </div>
           )}
 
-          <div style={{ marginTop: '20px' }}>
+          {/* Action Buttons */}
+          <div style={{ marginTop: '20px', display: 'flex', gap: '8px' }} aria-live="polite">
             <button
               onClick={handleApprove}
+              disabled={loading}
+              className="approve-button"
+              aria-busy={loading}
               style={{
-                width: '48%',
+                flex: 1,
                 padding: '10px',
-                backgroundColor: '#0052CC',
-                color: 'white',
+                backgroundColor: loading ? '#DFE1E6' : '#0052CC',
+                color: loading ? '#5E6C84' : 'white',
                 border: 'none',
                 borderRadius: '3px',
-                fontSize: '14px',
-                cursor: 'pointer',
-                marginRight: '4%'
+                fontSize: '13px',
+                fontWeight: 'bold',
+                cursor: loading ? 'not-allowed' : 'pointer',
+                transition: 'background-color 0.2s'
               }}
             >
-              Approve
+              {loading ? 'Applying...' : 'Approve & Apply'}
             </button>
             <button
               onClick={handleReject}
+              disabled={loading}
+              className="reject-button"
               style={{
-                width: '48%',
+                flex: 1,
                 padding: '10px',
                 backgroundColor: '#DFE1E6',
                 color: '#172B4D',
                 border: 'none',
                 borderRadius: '3px',
-                fontSize: '14px',
-                cursor: 'pointer'
+                fontSize: '13px',
+                fontWeight: 'bold',
+                cursor: loading ? 'not-allowed' : 'pointer',
+                transition: 'background-color 0.2s'
               }}
             >
               Reject
