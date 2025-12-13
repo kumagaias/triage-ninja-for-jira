@@ -1,6 +1,48 @@
 import React, { useEffect, useState } from 'react';
 import { invoke } from '@forge/bridge';
 
+// Helper function to get confidence color based on score
+const getConfidenceColor = (confidence) => {
+  if (confidence >= 80) {
+    return {
+      background: '#E3FCEF',
+      border: '#00875A'
+    };
+  } else if (confidence >= 60) {
+    return {
+      background: '#FFF0B3',
+      border: '#FF991F'
+    };
+  } else {
+    return {
+      background: '#FFEBE6',
+      border: '#FF5630'
+    };
+  }
+};
+
+// Add CSS for hover effects
+const styles = `
+  .run-triage-button:hover:not(:disabled) {
+    background-color: #0747A6 !important;
+  }
+  
+  .approve-button:hover:not(:disabled) {
+    background-color: #0747A6 !important;
+  }
+  
+  .reject-button:hover:not(:disabled) {
+    background-color: #C1C7D0 !important;
+  }
+`;
+
+// Inject styles into document
+if (typeof document !== 'undefined') {
+  const styleSheet = document.createElement('style');
+  styleSheet.textContent = styles;
+  document.head.appendChild(styleSheet);
+}
+
 /**
  * AI Triage Panel Component
  * Displays AI-powered triage analysis for Jira issues
@@ -137,6 +179,8 @@ function App() {
           <button
             onClick={handleRunTriage}
             disabled={loading}
+            className="run-triage-button"
+            aria-busy={loading}
             style={{
               width: '100%',
               padding: '12px',
@@ -149,12 +193,6 @@ function App() {
               cursor: loading ? 'not-allowed' : 'pointer',
               marginTop: '10px',
               transition: 'background-color 0.2s'
-            }}
-            onMouseEnter={(e) => {
-              if (!loading) e.currentTarget.style.backgroundColor = '#0747A6';
-            }}
-            onMouseLeave={(e) => {
-              if (!loading) e.currentTarget.style.backgroundColor = '#0052CC';
             }}
           >
             {loading ? '🤖 Analyzing...' : '🤖 Run AI Triage'}
@@ -221,12 +259,10 @@ function App() {
           {/* Confidence Score */}
           <div style={{
             padding: '12px',
-            backgroundColor: triageResult.confidence >= 80 ? '#E3FCEF' : 
-                           triageResult.confidence >= 60 ? '#FFF0B3' : '#FFEBE6',
+            backgroundColor: getConfidenceColor(triageResult.confidence).background,
             borderRadius: '3px',
             marginBottom: '15px',
-            border: `1px solid ${triageResult.confidence >= 80 ? '#00875A' : 
-                                 triageResult.confidence >= 60 ? '#FF991F' : '#FF5630'}`
+            border: `1px solid ${getConfidenceColor(triageResult.confidence).border}`
           }}>
             <div style={{ fontSize: '12px', color: '#5E6C84', marginBottom: '4px' }}>
               Confidence Score
@@ -365,10 +401,12 @@ function App() {
           )}
 
           {/* Action Buttons */}
-          <div style={{ marginTop: '20px', display: 'flex', gap: '8px' }}>
+          <div style={{ marginTop: '20px', display: 'flex', gap: '8px' }} aria-live="polite">
             <button
               onClick={handleApprove}
               disabled={loading}
+              className="approve-button"
+              aria-busy={loading}
               style={{
                 flex: 1,
                 padding: '10px',
@@ -381,18 +419,13 @@ function App() {
                 cursor: loading ? 'not-allowed' : 'pointer',
                 transition: 'background-color 0.2s'
               }}
-              onMouseEnter={(e) => {
-                if (!loading) e.currentTarget.style.backgroundColor = '#0747A6';
-              }}
-              onMouseLeave={(e) => {
-                if (!loading) e.currentTarget.style.backgroundColor = '#0052CC';
-              }}
             >
               {loading ? 'Applying...' : 'Approve & Apply'}
             </button>
             <button
               onClick={handleReject}
               disabled={loading}
+              className="reject-button"
               style={{
                 flex: 1,
                 padding: '10px',
@@ -404,12 +437,6 @@ function App() {
                 fontWeight: 'bold',
                 cursor: loading ? 'not-allowed' : 'pointer',
                 transition: 'background-color 0.2s'
-              }}
-              onMouseEnter={(e) => {
-                if (!loading) e.currentTarget.style.backgroundColor = '#C1C7D0';
-              }}
-              onMouseLeave={(e) => {
-                if (!loading) e.currentTarget.style.backgroundColor = '#DFE1E6';
               }}
             >
               Reject

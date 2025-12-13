@@ -1,6 +1,50 @@
 import React, { useEffect, useState } from 'react';
 import { invoke } from '@forge/bridge';
 
+// Priority color mapping - moved outside component to avoid recreation on each render
+const PRIORITY_COLORS = {
+  Highest: '#FF5630',
+  High: '#FF8B00',
+  Medium: '#FFAB00',
+  Low: '#36B37E',
+  Lowest: '#00B8D9'
+};
+
+// Add CSS for hover effects
+const styles = `
+  .stat-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 8px rgba(9,30,66,0.25) !important;
+  }
+  
+  .ticket-row:hover {
+    background-color: #F4F5F7 !important;
+  }
+  
+  .triage-button:hover {
+    background-color: #0747A6 !important;
+  }
+  
+  .run-triage-button:hover {
+    background-color: #0747A6 !important;
+  }
+  
+  .approve-button:hover {
+    background-color: #0747A6 !important;
+  }
+  
+  .reject-button:hover {
+    background-color: #C1C7D0 !important;
+  }
+`;
+
+// Inject styles into document
+if (typeof document !== 'undefined') {
+  const styleSheet = document.createElement('style');
+  styleSheet.textContent = styles;
+  document.head.appendChild(styleSheet);
+}
+
 /**
  * TriageNinja Dashboard Component
  * Displays triage statistics and untriaged tickets
@@ -152,10 +196,13 @@ function App() {
         alignItems: 'center'
       }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-          <label style={{ fontSize: '14px', color: '#5E6C84', fontWeight: 'bold' }}>
+          <label 
+            htmlFor="priority-filter"
+            style={{ fontSize: '14px', color: '#5E6C84', fontWeight: 'bold' }}>
             優先度:
           </label>
           <select
+            id="priority-filter"
             value={filters.priority}
             onChange={(e) => setFilters({ ...filters, priority: e.target.value })}
             style={{
@@ -176,10 +223,13 @@ function App() {
         </div>
         
         <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-          <label style={{ fontSize: '14px', color: '#5E6C84', fontWeight: 'bold' }}>
+          <label 
+            htmlFor="date-filter"
+            style={{ fontSize: '14px', color: '#5E6C84', fontWeight: 'bold' }}>
             期間:
           </label>
           <select
+            id="date-filter"
             value={filters.dateRange}
             onChange={(e) => setFilters({ ...filters, dateRange: e.target.value })}
             style={{
@@ -237,23 +287,17 @@ function App() {
  */
 function StatCard({ title, value, color }) {
   return (
-    <div style={{
-      backgroundColor: 'white',
-      borderRadius: '3px',
-      padding: '15px',
-      boxShadow: '0 1px 1px rgba(9,30,66,0.25)',
-      borderTop: `3px solid ${color}`,
-      minWidth: '150px',
-      transition: 'transform 0.2s, box-shadow 0.2s'
-    }}
-    onMouseEnter={(e) => {
-      e.currentTarget.style.transform = 'translateY(-2px)';
-      e.currentTarget.style.boxShadow = '0 4px 8px rgba(9,30,66,0.25)';
-    }}
-    onMouseLeave={(e) => {
-      e.currentTarget.style.transform = 'translateY(0)';
-      e.currentTarget.style.boxShadow = '0 1px 1px rgba(9,30,66,0.25)';
-    }}>
+    <div 
+      className="stat-card"
+      style={{
+        backgroundColor: 'white',
+        borderRadius: '3px',
+        padding: '15px',
+        boxShadow: '0 1px 1px rgba(9,30,66,0.25)',
+        borderTop: `3px solid ${color}`,
+        minWidth: '150px',
+        transition: 'transform 0.2s, box-shadow 0.2s'
+      }}>
       <div style={{ fontSize: '12px', color: '#5E6C84', marginBottom: '8px', fontWeight: '500' }}>
         {title}
       </div>
@@ -274,14 +318,6 @@ function StatCard({ title, value, color }) {
  * Task 4.4: Responsive design for mobile/tablet
  */
 function TicketRow({ ticket }) {
-  const priorityColor = {
-    Highest: '#FF5630',
-    High: '#FF8B00',
-    Medium: '#FFAB00',
-    Low: '#36B37E',
-    Lowest: '#00B8D9'
-  };
-
   const handleTriageClick = () => {
     // Open the issue in a new tab
     // Note: In Forge apps, we can use the issue key to construct the URL
@@ -305,21 +341,17 @@ function TicketRow({ ticket }) {
   };
 
   return (
-    <div style={{
-      display: 'flex',
-      alignItems: 'center',
-      padding: '12px 8px',
-      borderBottom: '1px solid #DFE1E6',
-      gap: '10px',
-      flexWrap: 'wrap',
-      transition: 'background-color 0.2s'
-    }}
-    onMouseEnter={(e) => {
-      e.currentTarget.style.backgroundColor = '#F4F5F7';
-    }}
-    onMouseLeave={(e) => {
-      e.currentTarget.style.backgroundColor = 'transparent';
-    }}>
+    <div 
+      className="ticket-row"
+      style={{
+        display: 'flex',
+        alignItems: 'center',
+        padding: '12px 8px',
+        borderBottom: '1px solid #DFE1E6',
+        gap: '10px',
+        flexWrap: 'wrap',
+        transition: 'background-color 0.2s'
+      }}>
       {/* Ticket Key */}
       <div style={{ 
         flex: '0 0 auto',
@@ -361,7 +393,7 @@ function TicketRow({ ticket }) {
         fontSize: '11px',
         fontWeight: 'bold',
         color: 'white',
-        backgroundColor: priorityColor[ticket.fields.priority?.name] || '#5E6C84'
+        backgroundColor: PRIORITY_COLORS[ticket.fields.priority?.name] || '#5E6C84'
       }}>
         {ticket.fields.priority?.name || 'None'}
       </div>
@@ -369,6 +401,8 @@ function TicketRow({ ticket }) {
       {/* Triage Button */}
       <button
         onClick={handleTriageClick}
+        className="triage-button"
+        aria-label={`Triage ticket ${ticket.key}`}
         style={{
           flex: '0 0 auto',
           padding: '6px 12px',
@@ -380,12 +414,6 @@ function TicketRow({ ticket }) {
           cursor: 'pointer',
           fontWeight: '500',
           transition: 'background-color 0.2s'
-        }}
-        onMouseEnter={(e) => {
-          e.currentTarget.style.backgroundColor = '#0747A6';
-        }}
-        onMouseLeave={(e) => {
-          e.currentTarget.style.backgroundColor = '#0052CC';
         }}
       >
         Triage
