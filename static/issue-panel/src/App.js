@@ -10,6 +10,7 @@ function App() {
   const [triageResult, setTriageResult] = useState(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
+  const [successMessage, setSuccessMessage] = useState(null);
 
   // Fetch issue details on component mount
   useEffect(() => {
@@ -68,12 +69,17 @@ function App() {
       });
       
       // Show success message
-      alert('✅ Triage result applied successfully!');
+      setSuccessMessage({
+        priority: triageResult.priority,
+        assignee: triageResult.suggestedAssignee.name,
+        category: triageResult.category,
+        subCategory: triageResult.subCategory
+      });
       
       // Clear the result
       setTriageResult(null);
       
-      // Optionally reload issue details to show updated values
+      // Reload issue details in the panel
       const details = await invoke('getIssueDetails');
       setIssueDetails(details);
     } catch (err) {
@@ -138,6 +144,47 @@ function App() {
           color: '#BF2600'
         }}>
           ⚠️ {error}
+        </div>
+      )}
+
+      {successMessage && (
+        <div style={{
+          padding: '12px',
+          backgroundColor: '#E3FCEF',
+          border: '1px solid #00875A',
+          borderRadius: '3px',
+          marginTop: '10px',
+          color: '#006644'
+        }}>
+          <div style={{ fontWeight: 'bold', marginBottom: '8px' }}>
+            ✅ Triage result applied successfully!
+          </div>
+          <div style={{ fontSize: '12px', marginBottom: '4px' }}>
+            The issue has been updated with:
+          </div>
+          <ul style={{ margin: '4px 0', paddingLeft: '20px', fontSize: '12px' }}>
+            <li>Priority: <strong>{successMessage.priority}</strong></li>
+            <li>Assignee: <strong>{successMessage.assignee}</strong></li>
+            <li>Labels: <strong>{successMessage.category}, {successMessage.subCategory}</strong></li>
+          </ul>
+          <div style={{ fontSize: '11px', marginTop: '8px', fontStyle: 'italic' }}>
+            🔄 Refresh the page to see changes in the main issue view
+          </div>
+          <button
+            onClick={() => setSuccessMessage(null)}
+            style={{
+              marginTop: '8px',
+              padding: '4px 8px',
+              backgroundColor: '#00875A',
+              color: 'white',
+              border: 'none',
+              borderRadius: '3px',
+              fontSize: '11px',
+              cursor: 'pointer'
+            }}
+          >
+            Dismiss
+          </button>
         </div>
       )}
 
