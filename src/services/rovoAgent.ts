@@ -99,40 +99,40 @@ export interface FindSimilarOutput {
  * Analyzes ticket content and determines category, priority, and urgency
  */
 export async function classifyTicket(input: ClassifyTicketInput): Promise<ClassifyTicketOutput> {
-  const prompt = `以下のサポートチケットを分析し、適切なカテゴリー、優先度、緊急度を判定してください。
+  const prompt = `Analyze the following support ticket and determine the appropriate category, priority, and urgency.
 
-チケット情報:
-- 概要: ${sanitizeForPrompt(input.summary)}
-- 詳細: ${sanitizeForPrompt(input.description || 'なし')}
-- 報告者: ${sanitizeForPrompt(input.reporter)}
-- 作成日時: ${sanitizeForPrompt(input.created)}
+Ticket Information:
+- Summary: ${sanitizeForPrompt(input.summary)}
+- Description: ${sanitizeForPrompt(input.description || 'None')}
+- Reporter: ${sanitizeForPrompt(input.reporter)}
+- Created: ${sanitizeForPrompt(input.created)}
 
-カテゴリー例:
+Category Examples:
 - Network & Connectivity (VPN, WiFi, Firewall)
 - Hardware (PC, Printer, Monitor, Keyboard)
 - Software (Application, OS, License)
 - Account & Access (Password, Permissions, Login)
 - Email & Communication (Outlook, Teams, Slack)
-- Other (その他)
+- Other
 
-優先度の判定基準:
-- High: 業務に重大な影響、多数のユーザーに影響
-- Medium: 業務に影響があるが回避策あり
-- Low: 軽微な問題、改善要望
+Priority Criteria:
+- High: Critical business impact, affects many users
+- Medium: Business impact but workaround available
+- Low: Minor issue, enhancement request
 
-緊急度の判定基準:
-- Urgent: 即座の対応が必要
-- Normal: 通常の対応で問題なし
+Urgency Criteria:
+- Urgent: Requires immediate attention
+- Normal: Can be handled in normal workflow
 
-以下のJSON形式で回答してください:
+Respond in the following JSON format:
 {
-  "category": "カテゴリー名",
-  "subCategory": "サブカテゴリー名",
+  "category": "Category name",
+  "subCategory": "Subcategory name",
   "priority": "High/Medium/Low",
   "urgency": "Urgent/Normal",
-  "confidence": 0-100の数値,
-  "reasoning": "判定理由（なぜこのカテゴリー・優先度・緊急度と判断したか）",
-  "tags": ["タグ1", "タグ2"]
+  "confidence": 0-100 numeric value,
+  "reasoning": "Explanation of why this category, priority, and urgency were determined",
+  "tags": ["tag1", "tag2"]
 }`;
 
   try {
@@ -231,7 +231,7 @@ export async function suggestAssignee(input: SuggestAssigneeInput): Promise<Sugg
   const formattedAgents = input.availableAgents
     .map((agent, index) => 
       `${index + 1}. ${sanitizeForPrompt(agent.name)} (ID: ${sanitizeForPrompt(agent.id)})
-   現在の負荷: ${agent.currentLoad}件`
+   Current workload: ${agent.currentLoad} tickets`
     )
     .join('\n');
 
@@ -239,35 +239,35 @@ export async function suggestAssignee(input: SuggestAssigneeInput): Promise<Sugg
   const formattedHistory = input.historicalData
     .map((data, index) => 
       `${index + 1}. ${sanitizeForPrompt(data.agent)}
-   カテゴリー: ${sanitizeForPrompt(data.category)}
-   平均解決時間: ${sanitizeForPrompt(data.avgResolutionTime)}
-   成功率: ${data.successRate * 100}%`
+   Category: ${sanitizeForPrompt(data.category)}
+   Avg resolution time: ${sanitizeForPrompt(data.avgResolutionTime)}
+   Success rate: ${data.successRate * 100}%`
     )
     .join('\n');
 
-  const prompt = `以下の情報を基に、最適な担当者を選定してください:
+  const prompt = `Based on the following information, select the best assignee for this ticket:
 
-カテゴリー: ${sanitizeForPrompt(input.category)}
-サブカテゴリー: ${sanitizeForPrompt(input.subCategory)}
+Category: ${sanitizeForPrompt(input.category)}
+Subcategory: ${sanitizeForPrompt(input.subCategory)}
 
-利用可能な担当者:
+Available Assignees:
 ${formattedAgents}
 
-過去の実績:
+Historical Performance:
 ${formattedHistory}
 
-JSON形式で回答:
+Respond in JSON format:
 {
-  "assignee": "担当者名",
-  "assigneeId": "担当者ID",
-  "reason": "選定理由",
+  "assignee": "Assignee name",
+  "assigneeId": "Assignee ID",
+  "reason": "Reason for selection",
   "confidence": 0-100,
-  "estimatedTime": "推定解決時間",
+  "estimatedTime": "Estimated resolution time",
   "alternatives": [
     {
-      "assignee": "代替担当者名",
-      "assigneeId": "代替担当者ID",
-      "reason": "理由"
+      "assignee": "Alternative assignee name",
+      "assigneeId": "Alternative assignee ID",
+      "reason": "Reason"
     }
   ]
 }`;
@@ -339,36 +339,35 @@ export async function findSimilarTickets(input: FindSimilarInput): Promise<FindS
   const formattedPastTickets = input.pastTickets
     .map((ticket, index) => 
       `${index + 1}. ${sanitizeForPrompt(ticket.id)}
-   概要: ${sanitizeForPrompt(ticket.summary)}
-   詳細: ${sanitizeForPrompt(ticket.description.substring(0, 200))}${ticket.description.length > 200 ? '...' : ''}
-   解決方法: ${sanitizeForPrompt(ticket.resolution)}
-   解決時間: ${sanitizeForPrompt(ticket.resolutionTime)}`
+   Summary: ${sanitizeForPrompt(ticket.summary)}
+   Description: ${sanitizeForPrompt(ticket.description.substring(0, 200))}${ticket.description.length > 200 ? '...' : ''}
+   Resolution: ${sanitizeForPrompt(ticket.resolution)}
+   Resolution time: ${sanitizeForPrompt(ticket.resolutionTime)}`
     )
     .join('\n\n');
 
-  const prompt = `以下の現在のチケットに類似する過去のチケットを分析し、
-最も関連性の高いものを上位3件選定してください:
+  const prompt = `Analyze the past tickets and identify the top 3 most similar tickets to the current one:
 
-現在のチケット:
-- 概要: ${sanitizeForPrompt(input.currentTicket.summary)}
-- 詳細: ${sanitizeForPrompt(input.currentTicket.description || 'なし')}
+Current Ticket:
+- Summary: ${sanitizeForPrompt(input.currentTicket.summary)}
+- Description: ${sanitizeForPrompt(input.currentTicket.description || 'None')}
 
-過去のチケット:
+Past Tickets:
 ${formattedPastTickets}
 
-JSON形式で回答:
+Respond in JSON format:
 {
   "similarTickets": [
     {
-      "id": "チケットID",
-      "similarity": 0-1の数値,
-      "solution": "解決方法の要約",
-      "resolutionTime": "解決時間"
+      "id": "Ticket ID",
+      "similarity": 0-1 numeric value,
+      "solution": "Summary of resolution",
+      "resolutionTime": "Resolution time"
     }
   ],
   "suggestedActions": [
-    "推奨アクション1",
-    "推奨アクション2"
+    "Suggested action 1",
+    "Suggested action 2"
   ]
 }`;
 
