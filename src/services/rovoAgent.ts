@@ -102,10 +102,10 @@ export async function classifyTicket(input: ClassifyTicketInput): Promise<Classi
   const prompt = `以下のサポートチケットを分析し、適切なカテゴリー、優先度、緊急度を判定してください。
 
 チケット情報:
-- 概要: ${input.summary}
-- 詳細: ${input.description || 'なし'}
-- 報告者: ${input.reporter}
-- 作成日時: ${input.created}
+- 概要: ${sanitizeForPrompt(input.summary)}
+- 詳細: ${sanitizeForPrompt(input.description || 'なし')}
+- 報告者: ${sanitizeForPrompt(input.reporter)}
+- 作成日時: ${sanitizeForPrompt(input.created)}
 
 カテゴリー例:
 - Network & Connectivity (VPN, WiFi, Firewall)
@@ -161,8 +161,14 @@ export async function classifyTicket(input: ClassifyTicketInput): Promise<Classi
       throw new Error('No response from AI');
     }
 
-    // Parse AI response
-    const result = JSON.parse(aiResponse);
+    // Parse AI response with error handling
+    let result;
+    try {
+      result = JSON.parse(aiResponse);
+    } catch (parseError) {
+      console.error('Failed to parse AI response as JSON:', aiResponse, parseError);
+      throw new Error('AI response was not valid JSON');
+    }
     
     return {
       category: result.category || 'Uncategorized',
@@ -190,16 +196,48 @@ export async function classifyTicket(input: ClassifyTicketInput): Promise<Classi
 }
 
 /**
+ * Sanitize data for prompt to prevent injection attacks
+ */
+function sanitizeForPrompt(data: any): string {
+  if (typeof data === 'string') {
+    return data.replace(/[\\"`]/g, '\\$&').substring(0, 500);
+  }
+  return JSON.stringify(data).substring(0, 1000);
+}
+
+/**
  * Suggest the best assignee for a ticket
  * Analyzes agent skills and workload to recommend optimal assignment
  */
 export async function suggestAssignee(input: SuggestAssigneeInput): Promise<SuggestAssigneeOutput> {
+  // Format available agents in a safe, readable way
+  const formattedAgents = input.availableAgents
+    .map((agent, index) => 
+      `${index + 1}. ${sanitizeForPrompt(agent.name)} (ID: ${sanitizeForPrompt(agent.id)})
+   現在の負荷: ${agent.currentLoad}件`
+    )
+    .join('\n');
+
+  // Format historical data in a safe, readable way
+  const formattedHistory = input.historicalData
+    .map((data, index) => 
+      `${index + 1}. ${sanitizeForPrompt(data.agent)}
+   カテゴリー: ${sanitizeForPrompt(data.category)}
+   平均解決時間: ${sanitizeForPrompt(data.avgResolutionTime)}
+   成功率: ${data.successRate * 100}%`
+    )
+    .join('\n');
+
   const prompt = `以下の情報を基に、最適な担当者を選定してください:
 
-カテゴリー: ${input.category}
-サブカテゴリー: ${input.subCategory}
-利用可能な担当者: ${JSON.stringify(input.availableAgents)}
-過去の実績: ${JSON.stringify(input.historicalData)}
+カテゴリー: ${sanitizeForPrompt(input.category)}
+サブカテゴリー: ${sanitizeForPrompt(input.subCategory)}
+
+利用可能な担当者:
+${formattedAgents}
+
+過去の実績:
+${formattedHistory}
 
 JSON形式で回答:
 {
@@ -242,7 +280,14 @@ JSON形式で回答:
       throw new Error('No response from AI');
     }
 
-    const result = JSON.parse(aiResponse);
+    // Parse AI response with error handling
+    let result;
+    try {
+      result = JSON.parse(aiResponse);
+    } catch (parseError) {
+      console.error('Failed to parse AI response as JSON:', aiResponse, parseError);
+      throw new Error('AI response was not valid JSON');
+    }
     
     return {
       assignee: result.assignee || 'Unassigned',
@@ -272,14 +317,14 @@ JSON形式で回答:
  * Uses AI to identify semantically similar past tickets
  */
 export async function findSimilarTickets(input: FindSimilarInput): Promise<FindSimilarOutput> {
-  // Format past tickets in a more readable way for the AI
+  // Format past tickets in a more readable way for the AI with sanitization
   const formattedPastTickets = input.pastTickets
     .map((ticket, index) => 
-      `${index + 1}. ${ticket.id}
-   概要: ${ticket.summary}
-   詳細: ${ticket.description.substring(0, 200)}${ticket.description.length > 200 ? '...' : ''}
-   解決方法: ${ticket.resolution}
-   解決時間: ${ticket.resolutionTime}`
+      `${index + 1}. ${sanitizeForPrompt(ticket.id)}
+   概要: ${sanitizeForPrompt(ticket.summary)}
+   詳細: ${sanitizeForPrompt(ticket.description.substring(0, 200))}${ticket.description.length > 200 ? '...' : ''}
+   解決方法: ${sanitizeForPrompt(ticket.resolution)}
+   解決時間: ${sanitizeForPrompt(ticket.resolutionTime)}`
     )
     .join('\n\n');
 
@@ -287,8 +332,8 @@ export async function findSimilarTickets(input: FindSimilarInput): Promise<FindS
 最も関連性の高いものを上位3件選定してください:
 
 現在のチケット:
-- 概要: ${input.currentTicket.summary}
-- 詳細: ${input.currentTicket.description || 'なし'}
+- 概要: ${sanitizeForPrompt(input.currentTicket.summary)}
+- 詳細: ${sanitizeForPrompt(input.currentTicket.description || 'なし')}
 
 過去のチケット:
 ${formattedPastTickets}
@@ -334,7 +379,14 @@ JSON形式で回答:
       throw new Error('No response from AI');
     }
 
-    const result = JSON.parse(aiResponse);
+    // Parse AI response with error handling
+    let result;
+    try {
+      result = JSON.parse(aiResponse);
+    } catch (parseError) {
+      console.error('Failed to parse AI response as JSON:', aiResponse, parseError);
+      throw new Error('AI response was not valid JSON');
+    }
     
     return {
       similarTickets: result.similarTickets || [],
