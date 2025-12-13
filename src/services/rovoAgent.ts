@@ -255,15 +255,26 @@ JSON形式で回答:
  * Uses AI to identify semantically similar past tickets
  */
 export async function findSimilarTickets(input: FindSimilarInput): Promise<FindSimilarOutput> {
+  // Format past tickets in a more readable way for the AI
+  const formattedPastTickets = input.pastTickets
+    .map((ticket, index) => 
+      `${index + 1}. ${ticket.id}
+   概要: ${ticket.summary}
+   詳細: ${ticket.description.substring(0, 200)}${ticket.description.length > 200 ? '...' : ''}
+   解決方法: ${ticket.resolution}
+   解決時間: ${ticket.resolutionTime}`
+    )
+    .join('\n\n');
+
   const prompt = `以下の現在のチケットに類似する過去のチケットを分析し、
-最も関連性の高いものを選定してください:
+最も関連性の高いものを上位3件選定してください:
 
 現在のチケット:
 - 概要: ${input.currentTicket.summary}
 - 詳細: ${input.currentTicket.description || 'なし'}
 
 過去のチケット:
-${JSON.stringify(input.pastTickets)}
+${formattedPastTickets}
 
 JSON形式で回答:
 {
@@ -271,7 +282,7 @@ JSON形式で回答:
     {
       "id": "チケットID",
       "similarity": 0-1の数値,
-      "solution": "解決方法",
+      "solution": "解決方法の要約",
       "resolutionTime": "解決時間"
     }
   ],
