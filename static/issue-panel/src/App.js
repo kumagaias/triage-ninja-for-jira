@@ -55,11 +55,33 @@ function App() {
 
   // Handle approve action
   const handleApprove = async () => {
-    // TODO: Implement approve logic in later tasks
-    // - Save triage result to Forge Storage
-    // - Update issue with category, priority, assignee
-    console.log('Approved triage result:', triageResult);
-    setTriageResult(null);
+    setLoading(true);
+    setError(null);
+    
+    try {
+      await invoke('applyTriageResult', {
+        issueKey: issueDetails.key,
+        priority: triageResult.priority,
+        assigneeId: triageResult.suggestedAssignee.id,
+        category: triageResult.category,
+        subCategory: triageResult.subCategory
+      });
+      
+      // Show success message
+      alert('✅ Triage result applied successfully!');
+      
+      // Clear the result
+      setTriageResult(null);
+      
+      // Optionally reload issue details to show updated values
+      const details = await invoke('getIssueDetails');
+      setIssueDetails(details);
+    } catch (err) {
+      console.error('Failed to apply triage result:', err);
+      setError('Failed to apply triage result. Please try again.');
+    } finally {
+      setLoading(false);
+    }
   };
 
   // Handle reject action

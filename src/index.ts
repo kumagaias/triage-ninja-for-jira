@@ -344,4 +344,77 @@ issuePanelResolver.define('runAITriage', async (req) => {
   }
 });
 
+/**
+ * Apply AI triage results to the issue
+ * Updates priority, assignee, and labels based on AI analysis
+ */
+issuePanelResolver.define('applyTriageResult', async (req) => {
+  const payload = req.payload as {
+    issueKey: string;
+    priority: string;
+    assigneeId: string;
+    category: string;
+    subCategory: string;
+  };
+  
+  const { issueKey, priority, assigneeId, category, subCategory } = payload;
+  
+  if (!issueKey) {
+    throw new Error('Missing required parameter: issueKey');
+  }
+  
+  try {
+    // Prepare update fields
+    const updateFields: any = {};
+    
+    // Update priority if provided
+    if (priority) {
+      // Map our priority to Jira priority IDs
+      // Note: Priority IDs may vary by Jira instance
+      const priorityMap: Record<string, string> = {
+        'High': '2',      // High
+        'Medium': '3',    // Medium
+        'Low': '4'        // Low
+      };
+      
+      if (priorityMap[priority]) {
+        updateFields.priority = { id: priorityMap[priority] };
+      }
+    }
+    
+    // Update assignee if provided
+    if (assigneeId) {
+      updateFields.assignee = { id: assigneeId };
+    }
+    
+    // Add category labels
+    const labels: string[] = [];
+    if (category && category !== 'Uncategorized') {
+      labels.push(`ai-category:${category.toLowerCase().replace(/\s+/g, '-')}`);
+    }
+    if (subCategory && subCategory !== 'General') {
+      labels.push(`ai-subcategory:${subCategory.toLowerCase().replace(/\s+/g, '-')}`);
+    }
+    
+    if (labels.length > 0) {
+      updateFields.labels = labels;
+    }
+    
+    // Update the issue
+    const updateResponse = await JiraClient.updateIssue(issueKey, updateFields);
+    
+    if (!updateResponse.ok) {
+      throw new Error('Failed to update issue');
+    }
+    
+    return {
+      success: true,
+      message: 'Triage result applied successfully'
+    };
+  } catch (error) {
+    console.error('Error in applyTriageResult:', error);
+    throw new Error('Failed to apply triage result. Please try again.');
+  }
+});
+
 export const issuePanelHandler = issuePanelResolver.getDefinitions();
