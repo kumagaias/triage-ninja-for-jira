@@ -76,15 +76,18 @@ export class JiraClient {
     fields?: string[]
   ): Promise<ApiResponse<JiraIssue>> {
     try {
-      // Build query string separately from route tag
-      let url = `/rest/api/3/issue/${issueIdOrKey}`;
-      if (fields) {
-        url += `?${new URLSearchParams({ fields: fields.join(',') }).toString()}`;
+      // Use route template with direct parameter interpolation
+      // Query parameters must be added separately to avoid path manipulation errors
+      let response;
+      if (fields && fields.length > 0) {
+        response = await api
+          .asUser()
+          .requestJira(route`/rest/api/3/issue/${issueIdOrKey}?fields=${fields.join(',')}`);
+      } else {
+        response = await api
+          .asUser()
+          .requestJira(route`/rest/api/3/issue/${issueIdOrKey}`);
       }
-      
-      const response = await api
-        .asUser()
-        .requestJira(route`${url}` as any);
 
       return this.handleResponse<JiraIssue>(response);
     } catch (error) {
