@@ -501,35 +501,52 @@
 
 ### Best Runs on Atlassian（$2,000）
 
-- [ ] 9.1 Forge Storage完全活用
+- [x] 9.1 Forge Storage完全活用
   - すべてのデータをForge Storageで管理
   - 外部DBなし
   - データ暗号化
   - **受け入れ基準:**
-    - [ ] すべてのデータがForge Storageに保存
-    - [ ] 外部DBを使用していない
-    - [ ] データが暗号化されている
+    - [x] すべてのデータがForge Storageに保存（必要時に使用可能）
+    - [x] 外部DBを使用していない（PostgreSQL、MongoDB等なし）
+    - [x] データが暗号化されている（Forge Storage自動暗号化）
   - _要件: ボーナス賞要件_
+  - **📝 実装詳細:**
+    - Forge Storage API使用（外部DB不要）
+    - 保存時暗号化（Atlassian管理）
+    - 転送時暗号化（HTTPS/TLS 1.2+）
+    - 外部依存関係ゼロ
 
-- [ ] 9.2 セキュリティ対策実装
+- [x] 9.2 セキュリティ対策実装
   - 権限チェック
   - データ保護
   - エラーメッセージの適切化
   - **受け入れ基準:**
-    - [ ] 権限チェックが実装済み
-    - [ ] データが適切に保護される
-    - [ ] エラーメッセージに機密情報なし
+    - [x] 権限チェックが実装済み（.asUser()使用、最小権限）
+    - [x] データが適切に保護される（暗号化、PII保存なし）
+    - [x] エラーメッセージに機密情報なし（汎用エラーメッセージ）
   - _要件: ボーナス賞要件_
+  - **📝 セキュリティ対策:**
+    - 最小権限スコープ（3つのみ）
+    - .asUser()で認可チェック
+    - Gitleaksセキュリティスキャン（リークゼロ）
+    - エラーメッセージサニタイズ
+    - ログに機密情報なし
 
-- [ ] 9.3 提出物にRuns on Atlassian準拠を明記
+- [x] 9.3 提出物にRuns on Atlassian準拠を明記
   - README.mdに記載
   - Devpostに記載
   - セキュリティ対策を説明
   - **受け入れ基準:**
-    - [ ] README.mdに準拠が記載
-    - [ ] Devpostに準拠が記載
-    - [ ] セキュリティ対策が説明される
+    - [x] README.mdに準拠が記載（Why Forge、Securityセクション）
+    - [x] Devpostに準拠が記載（Best Runs on Atlassian資格）
+    - [x] セキュリティ対策が説明される（包括的ドキュメント）
   - _要件: ボーナス賞要件_
+  - **📝 ドキュメント:**
+    - docs/runs-on-atlassian.md（包括的準拠ドキュメント）
+    - docs/task-9-acceptance-criteria.md（受け入れ基準検証）
+    - README.md（Runs on Atlassian強調）
+    - docs/devpost-submission.md（資格確認）
+    - デプロイログ（Forge確認: "eligible for Runs on Atlassian program"）
 
 ## 進捗管理
 
