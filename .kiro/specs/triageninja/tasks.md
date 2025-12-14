@@ -378,16 +378,21 @@
     - ハッカソン情報
     - スクリーンショットプレースホルダー
 
-- [ ] 6.4 インストールリンク生成
+- [x] 6.4 インストールリンク生成
   - Forge appデプロイ
   - インストールリンク取得
   - 動作確認
   - **受け入れ基準:**
-    - [ ] アプリがデプロイ済み
-    - [ ] インストールリンクが生成済み
-    - [ ] 他のJiraインスタンスでインストール可能
-    - [ ] すべての機能が動作
+    - [x] アプリがデプロイ済み（v2.9.0）
+    - [x] インストールリンクが生成済み（docs/installation-link.md）
+    - [x] 他のJiraインスタンスでインストール可能（2サイトで確認済み）
+    - [x] すべての機能が動作（デプロイ済み）
   - _要件: ハッカソン要件_
+  - **📝 インストール情報:**
+    - App ID: 81023c08-dbac-4cd9-8835-f1fe99bbb17c
+    - Development Link: https://developer.atlassian.com/console/install/81023c08-dbac-4cd9-8835-f1fe99bbb17c?environment=development
+    - Production Link: https://developer.atlassian.com/console/install/81023c08-dbac-4cd9-8835-f1fe99bbb17c?environment=production
+    - Current Installations: 2 sites (kumagaias-development, kumagaias)
 
 #### Day 14: 提出
 
