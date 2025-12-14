@@ -55,6 +55,12 @@ function App() {
   const [successMessage, setSuccessMessage] = useState(null);
   const [showConfirmDialog, setShowConfirmDialog] = useState(false);
   const [progress, setProgress] = useState(0);
+  
+  // Use refs to track timers and prevent race conditions
+  const progressIntervalRef = React.useRef(null);
+  const timeoutIdRef = React.useRef(null);
+  const progressResetTimeoutRef = React.useRef(null);
+  const isCancelledRef = React.useRef(false);
 
   // Fetch issue details on component mount
   useEffect(() => {
@@ -69,6 +75,21 @@ function App() {
     };
     fetchIssueDetails();
   }, []);
+  
+  // Cleanup timers on unmount
+  useEffect(() => {
+    return () => {
+      if (progressIntervalRef.current) {
+        clearInterval(progressIntervalRef.current);
+      }
+      if (timeoutIdRef.current) {
+        clearTimeout(timeoutIdRef.current);
+      }
+      if (progressResetTimeoutRef.current) {
+        clearTimeout(progressResetTimeoutRef.current);
+      }
+    };
+  }, []);
 
   // Run AI triage analysis with timeout and progress
   const handleRunTriage = async () => {
@@ -81,21 +102,43 @@ function App() {
     setLoading(true);
     setError(null);
     setProgress(0);
+    isCancelledRef.current = false;
     
-    let isTimedOut = false;
+    // Clear any existing timers
+    if (progressIntervalRef.current) clearInterval(progressIntervalRef.current);
+    if (timeoutIdRef.current) clearTimeout(timeoutIdRef.current);
+    if (progressResetTimeoutRef.current) clearTimeout(progressResetTimeoutRef.current);
     
-    // Progress simulation
-    const progressInterval = setInterval(() => {
-      setProgress(prev => {
-        if (prev >= 90) return prev;
-        return prev + 10;
-      });
-    }, 300);
+    // Non-linear progress simulation with easing
+    // Progress reaches 90% over 27 seconds, leaving 3 seconds buffer
+    const startTime = Date.now();
+    const duration = 27000; // 27 seconds to reach 90%
+    
+    progressIntervalRef.current = setInterval(() => {
+      if (isCancelledRef.current) {
+        clearInterval(progressIntervalRef.current);
+        return;
+      }
+      
+      const elapsed = Date.now() - startTime;
+      const ratio = Math.min(elapsed / duration, 1);
+      // Ease-out cubic function for smooth deceleration
+      const easedRatio = 1 - Math.pow(1 - ratio, 3);
+      const newProgress = Math.min(Math.floor(easedRatio * 90), 90);
+      
+      setProgress(newProgress);
+      
+      if (newProgress >= 90) {
+        clearInterval(progressIntervalRef.current);
+      }
+    }, 100);
     
     // Timeout after 30 seconds
-    const timeoutId = setTimeout(() => {
-      isTimedOut = true;
-      clearInterval(progressInterval);
+    timeoutIdRef.current = setTimeout(() => {
+      if (isCancelledRef.current) return;
+      
+      isCancelledRef.current = true;
+      clearInterval(progressIntervalRef.current);
       setLoading(false);
       setProgress(0);
       setError('Analysis timed out after 30 seconds. Please try again.');
@@ -111,20 +154,26 @@ function App() {
         created: issueDetails.created
       });
       
-      // Only process result if not timed out
-      if (!isTimedOut) {
-        clearTimeout(timeoutId);
-        clearInterval(progressInterval);
+      // Only process result if not cancelled
+      if (!isCancelledRef.current) {
+        clearTimeout(timeoutIdRef.current);
+        clearInterval(progressIntervalRef.current);
         setProgress(100);
         setTriageResult(result);
         setLoading(false);
-        setTimeout(() => setProgress(0), 500);
+        
+        // Store timeout ID for cleanup
+        progressResetTimeoutRef.current = setTimeout(() => {
+          if (!isCancelledRef.current) {
+            setProgress(0);
+          }
+        }, 500);
       }
     } catch (err) {
-      // Only show error if not timed out
-      if (!isTimedOut) {
-        clearTimeout(timeoutId);
-        clearInterval(progressInterval);
+      // Only show error if not cancelled
+      if (!isCancelledRef.current) {
+        clearTimeout(timeoutIdRef.current);
+        clearInterval(progressIntervalRef.current);
         console.error('Failed to run AI triage:', err);
         setError('Failed to analyze ticket. Please try again.');
         setLoading(false);
@@ -249,13 +298,19 @@ function App() {
           {/* Progress Bar */}
           {loading && progress > 0 && (
             <div style={{ marginTop: '12px' }}>
-              <div style={{
-                width: '100%',
-                height: '4px',
-                backgroundColor: '#DFE1E6',
-                borderRadius: '2px',
-                overflow: 'hidden'
-              }}>
+              <div 
+                role="progressbar"
+                aria-valuemin="0"
+                aria-valuemax="100"
+                aria-valuenow={progress}
+                aria-label="Analysis progress"
+                style={{
+                  width: '100%',
+                  height: '4px',
+                  backgroundColor: '#DFE1E6',
+                  borderRadius: '2px',
+                  overflow: 'hidden'
+                }}>
                 <div style={{
                   width: `${progress}%`,
                   height: '100%',
@@ -522,7 +577,7 @@ function App() {
       )}
       
       {/* Confirmation Dialog */}
-      {showConfirmDialog && (
+      {showConfirmDialog && triageResult && (
         <div 
           role="dialog"
           aria-modal="true"
@@ -571,9 +626,9 @@ function App() {
               fontSize: '13px',
               color: '#172B4D'
             }}>
-              <li>Priority: <strong>{triageResult.priority}</strong></li>
-              <li>Assignee: <strong>{triageResult.suggestedAssignee.name}</strong></li>
-              <li>Labels: <strong>{triageResult.category}, {triageResult.subCategory}</strong></li>
+              <li>Priority: <strong>{triageResult?.priority || 'N/A'}</strong></li>
+              <li>Assignee: <strong>{triageResult?.suggestedAssignee?.name || 'N/A'}</strong></li>
+              <li>Labels: <strong>{triageResult?.category || 'N/A'}, {triageResult?.subCategory || 'N/A'}</strong></li>
             </ul>
             <div style={{ display: 'flex', gap: '8px', justifyContent: 'flex-end' }}>
               <button
