@@ -1,7 +1,7 @@
 # Runs on Atlassian - TriageNinja
 
 **Status**: Fully Compliant  
-**Award Target**: Best Runs on Atlassian ($2,000)  
+**Award Target**: Platform Excellence  
 **Deployment Confirmation**: ✅ Eligible (confirmed in deployment output)
 
 ---
@@ -345,7 +345,7 @@ app:
 
 ---
 
-## Why TriageNinja Deserves Best Runs on Atlassian
+## Why TriageNinja Excels in Platform Excellence
 
 ### 1. Pure Forge Implementation
 

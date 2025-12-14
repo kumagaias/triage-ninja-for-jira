@@ -121,7 +121,7 @@ TriageNinja for Jira is **complete and ready for Atlassian Codegeist 2025 submis
 
 ## Awards Eligibility
 
-### 🏆 Best Rovo Apps ($2,000)
+### 🏆 Advanced AI Integration
 
 **Criteria Met:**
 - ✅ Uses Rovo Agent for AI analysis
@@ -137,7 +137,7 @@ TriageNinja for Jira is **complete and ready for Atlassian Codegeist 2025 submis
 - Test results - 90%+ accuracy achieved
 - Demo script - Shows AI capabilities
 
-### 🏆 Best Runs on Atlassian ($2,000)
+### 🏆 Platform Excellence
 
 **Criteria Met:**
 - ✅ 100% serverless on Forge

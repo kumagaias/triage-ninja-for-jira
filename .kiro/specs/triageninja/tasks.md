@@ -317,7 +317,7 @@
     - 担当者アサインフロー（設定済み）
     - ダッシュボード表示（設定済み）
     - 類似チケット検索（設定済み）
-  - **🎉 ボーナス:** Runs on Atlassian program対象（$2,000賞の要件満たす）
+  - **🎉 ボーナス:** Platform Excellence program対象
 
 #### Day 12-13: デモ準備
 
@@ -428,7 +428,7 @@
     - タグライン: Master the art of AI triage with TriageNinja 🥷
     - 説明: 問題、ソリューション、技術実装、インパクト
     - Built With: Forge, Rovo Agent, React, Node.js, TypeScript
-    - Awards: Best Rovo Apps, Best Runs on Atlassian
+    - Awards: Advanced AI Integration, Platform Excellence
 
 - [x] 7.3 ドキュメント確認
   - README.md最終確認
@@ -451,7 +451,7 @@
 
 ## ボーナス賞対策タスク
 
-### Best Rovo Apps（$2,000）
+### Advanced AI Integration
 
 - [x] 8.1 Rovo Agent複数タスク実装
   - チケット分類タスク
@@ -497,9 +497,9 @@
     - docs/rovo-integration.md（包括的な技術ドキュメント）
     - docs/task-8-acceptance-criteria.md（受け入れ基準検証）
     - README.md（複数箇所でRovo言及）
-    - docs/devpost-submission.md（Best Rovo Apps資格強調）
+    - docs/devpost-submission.md（Advanced AI Integration資格強調）
 
-### Best Runs on Atlassian（$2,000）
+### Platform Excellence
 
 - [x] 9.1 Forge Storage完全活用
   - すべてのデータをForge Storageで管理

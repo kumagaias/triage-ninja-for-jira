@@ -120,7 +120,7 @@
 - 🤖 Powered by Rovo Agent
 - 🔒 Secure by default
 - 📦 One-click installation
-- 🎯 Eligible for Best Rovo Apps & Best Runs on Atlassian
+- 🎯 Demonstrates Advanced AI Integration & Platform Excellence
 
 ## Scene 7: Call to Action (15 seconds)
 

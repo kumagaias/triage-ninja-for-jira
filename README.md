@@ -302,8 +302,8 @@ This project was created for **Atlassian Codegeist 2025** hackathon.
 
 ### Awards Targeting
 
-- 🏆 **Best Rovo Apps** ($2,000): Leverages Rovo Agent for multi-task AI analysis
-- 🏆 **Best Runs on Atlassian** ($2,000): 100% serverless on Forge platform
+- 🏆 **Advanced AI Integration**: Leverages Rovo Agent for multi-task AI analysis
+- 🏆 **Platform Excellence**: 100% serverless on Forge platform
 
 ### Demo Video
 

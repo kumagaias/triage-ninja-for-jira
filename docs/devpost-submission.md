@@ -3,7 +3,7 @@
 ## Submission Information
 
 **Hackathon**: Atlassian Codegeist 2025  
-**Category**: Best Rovo Apps, Best Runs on Atlassian  
+**Category**: Advanced AI Integration, Platform Excellence  
 **Submission Date**: December 2025
 
 ---
@@ -118,13 +118,13 @@ This manual work is time-consuming (5-10 minutes per ticket), error-prone, and r
 
 ### Why TriageNinja Deserves to Win
 
-**Best Rovo Apps ($2,000)**
+**Advanced AI Integration**
 - Leverages Rovo Agent for multiple AI tasks (classification, matching, search)
 - Demonstrates advanced prompt engineering
 - Shows real-world business value
 - Achieves 90%+ accuracy with intelligent analysis
 
-**Best Runs on Atlassian ($2,000)**
+**Platform Excellence**
 - 100% serverless on Forge platform
 - No external dependencies or infrastructure
 - Follows Atlassian security best practices
@@ -217,8 +217,8 @@ https://youtu.be/YOUR_VIDEO_ID
 
 ### Awards Eligibility
 
-✅ Best Rovo Apps - Uses Rovo Agent for multi-task AI analysis  
-✅ Best Runs on Atlassian - 100% serverless on Forge platform
+✅ Advanced AI Integration - Uses Rovo Agent for multi-task AI analysis  
+✅ Platform Excellence - 100% serverless on Forge platform
 
 ---
 
