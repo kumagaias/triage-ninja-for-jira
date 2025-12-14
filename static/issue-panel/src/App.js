@@ -48,6 +48,8 @@ if (typeof document !== 'undefined') {
  * Displays AI-powered triage analysis for Jira issues
  */
 function App() {
+  console.log('[AI Triage] Component mounted');
+  
   const [issueDetails, setIssueDetails] = useState(null);
   const [triageResult, setTriageResult] = useState(null);
   const [loading, setLoading] = useState(false);
@@ -66,11 +68,13 @@ function App() {
   useEffect(() => {
     const fetchIssueDetails = async () => {
       try {
+        console.log('[AI Triage] Fetching issue details...');
         const details = await invoke('getIssueDetails');
+        console.log('[AI Triage] Issue details loaded:', details);
         setIssueDetails(details);
       } catch (err) {
-        console.error('Failed to fetch issue details:', err);
-        setError('Failed to load issue details');
+        console.error('[AI Triage] Failed to fetch issue details:', err);
+        setError('Failed to load issue details. Please refresh the page.');
       }
     };
     fetchIssueDetails();
