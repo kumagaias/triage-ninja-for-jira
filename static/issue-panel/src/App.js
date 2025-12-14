@@ -82,6 +82,8 @@ function App() {
     setError(null);
     setProgress(0);
     
+    let isTimedOut = false;
+    
     // Progress simulation
     const progressInterval = setInterval(() => {
       setProgress(prev => {
@@ -92,6 +94,7 @@ function App() {
     
     // Timeout after 30 seconds
     const timeoutId = setTimeout(() => {
+      isTimedOut = true;
       clearInterval(progressInterval);
       setLoading(false);
       setProgress(0);
@@ -108,18 +111,25 @@ function App() {
         created: issueDetails.created
       });
       
-      clearTimeout(timeoutId);
-      clearInterval(progressInterval);
-      setProgress(100);
-      setTriageResult(result);
+      // Only process result if not timed out
+      if (!isTimedOut) {
+        clearTimeout(timeoutId);
+        clearInterval(progressInterval);
+        setProgress(100);
+        setTriageResult(result);
+        setLoading(false);
+        setTimeout(() => setProgress(0), 500);
+      }
     } catch (err) {
-      clearTimeout(timeoutId);
-      clearInterval(progressInterval);
-      console.error('Failed to run AI triage:', err);
-      setError('Failed to analyze ticket. Please try again.');
-    } finally {
-      setLoading(false);
-      setTimeout(() => setProgress(0), 500);
+      // Only show error if not timed out
+      if (!isTimedOut) {
+        clearTimeout(timeoutId);
+        clearInterval(progressInterval);
+        console.error('Failed to run AI triage:', err);
+        setError('Failed to analyze ticket. Please try again.');
+        setLoading(false);
+        setProgress(0);
+      }
     }
   };
 
