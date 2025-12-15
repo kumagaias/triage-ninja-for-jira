@@ -143,8 +143,8 @@ Respond in the following JSON format:
     console.log('Classifying ticket with mock AI (Rovo Agent not yet available)');
     
     // Simple keyword-based classification as fallback
-    const summaryLower = input.summary.toLowerCase();
-    const descriptionLower = (input.description || '').toLowerCase();
+    const summaryLower = String(input.summary || '').toLowerCase();
+    const descriptionLower = String(input.description || '').toLowerCase();
     const combined = summaryLower + ' ' + descriptionLower;
     
     let category = 'Other';
@@ -331,13 +331,13 @@ export async function findSimilarTickets(input: FindSimilarInput): Promise<FindS
     }
     
     // Simple keyword matching for similarity
-    const currentSummaryWords = input.currentTicket.summary.toLowerCase().split(/\s+/);
-    const currentDescWords = (input.currentTicket.description || '').toLowerCase().split(/\s+/);
+    const currentSummaryWords = String(input.currentTicket.summary || '').toLowerCase().split(/\s+/);
+    const currentDescWords = String(input.currentTicket.description || '').toLowerCase().split(/\s+/);
     const currentWords = new Set([...currentSummaryWords, ...currentDescWords]);
     
     const scoredTickets = input.pastTickets.map(ticket => {
-      const ticketSummaryWords = ticket.summary.toLowerCase().split(/\s+/);
-      const ticketDescWords = (ticket.description || '').toLowerCase().split(/\s+/);
+      const ticketSummaryWords = String(ticket.summary || '').toLowerCase().split(/\s+/);
+      const ticketDescWords = String(ticket.description || '').toLowerCase().split(/\s+/);
       const ticketWords = new Set([...ticketSummaryWords, ...ticketDescWords]);
       
       // Calculate similarity based on common words

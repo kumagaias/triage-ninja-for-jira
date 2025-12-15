@@ -240,7 +240,13 @@ function App() {
             className="run-triage-button"
             aria-busy={loading}
           >
-            {loading ? '🤖 Analyzing...' : '🤖 Run AI Triage'}
+            {loading ? (
+              <>
+                <span className="spinner">⚡</span> Analyzing...
+              </>
+            ) : (
+              '🥷 Run AI Triage'
+            )}
           </button>
           
           {/* Progress Bar */}
