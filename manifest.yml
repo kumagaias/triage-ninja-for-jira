@@ -17,6 +17,8 @@ modules:
       viewportSize: medium
       title: AI Triage
       icon: https://developer.atlassian.com/platform/forge/images/issue-panel-icon.svg
+      layout:
+        type: basic
   
   # Rovo Agent for AI Analysis
   rovo:agent:

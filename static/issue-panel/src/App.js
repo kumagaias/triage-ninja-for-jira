@@ -1,47 +1,17 @@
 import React, { useEffect, useState } from 'react';
 import { invoke } from '@forge/bridge';
+import './App.css';
 
-// Helper function to get confidence color based on score
-const getConfidenceColor = (confidence) => {
+// Helper function to get confidence CSS class based on score
+const getConfidenceClass = (confidence) => {
   if (confidence >= 80) {
-    return {
-      background: '#E3FCEF',
-      border: '#00875A'
-    };
+    return 'high';
   } else if (confidence >= 60) {
-    return {
-      background: '#FFF0B3',
-      border: '#FF991F'
-    };
+    return 'medium';
   } else {
-    return {
-      background: '#FFEBE6',
-      border: '#FF5630'
-    };
+    return 'low';
   }
 };
-
-// Add CSS for hover effects
-const styles = `
-  .run-triage-button:hover:not(:disabled) {
-    background-color: #0747A6 !important;
-  }
-  
-  .approve-button:hover:not(:disabled) {
-    background-color: #0747A6 !important;
-  }
-  
-  .reject-button:hover:not(:disabled) {
-    background-color: #C1C7D0 !important;
-  }
-`;
-
-// Inject styles into document
-if (typeof document !== 'undefined') {
-  const styleSheet = document.createElement('style');
-  styleSheet.textContent = styles;
-  document.head.appendChild(styleSheet);
-}
 
 /**
  * AI Triage Panel Component
@@ -241,39 +211,26 @@ function App() {
 
   if (!issueDetails) {
     return (
-      <div style={{ padding: '20px', textAlign: 'center' }}>
+      <div className="loading-container">
         <div>Loading issue details...</div>
       </div>
     );
   }
 
   return (
-    <div style={{ padding: '16px', fontFamily: 'Arial, sans-serif' }}>
-      <h2 style={{ 
-        marginTop: 0, 
-        color: '#172B4D', 
-        fontSize: '18px',
-        display: 'flex',
-        alignItems: 'center',
-        gap: '8px'
-      }}>
+    <div className="ai-triage-container">
+      <h2 className="ai-triage-header">
         <span>🥷</span>
         <span>AI Triage</span>
       </h2>
       
       {!triageResult && (
         <div>
-          <div style={{
-            padding: '10px',
-            backgroundColor: '#F4F5F7',
-            borderRadius: '3px',
-            marginBottom: '12px',
-            fontSize: '13px'
-          }}>
-            <div style={{ color: '#5E6C84', marginBottom: '4px' }}>
+          <div className="status-box">
+            <div className="status-label">
               Status:
             </div>
-            <div style={{ color: '#172B4D', fontWeight: 'bold' }}>
+            <div className="status-value">
               Not Triaged
             </div>
           </div>
@@ -282,52 +239,26 @@ function App() {
             disabled={loading}
             className="run-triage-button"
             aria-busy={loading}
-            style={{
-              width: '100%',
-              padding: '12px',
-              backgroundColor: loading ? '#DFE1E6' : '#0052CC',
-              color: loading ? '#5E6C84' : 'white',
-              border: 'none',
-              borderRadius: '3px',
-              fontSize: '14px',
-              fontWeight: 'bold',
-              cursor: loading ? 'not-allowed' : 'pointer',
-              marginTop: '10px',
-              transition: 'background-color 0.2s'
-            }}
           >
             {loading ? '🤖 Analyzing...' : '🤖 Run AI Triage'}
           </button>
           
           {/* Progress Bar */}
           {loading && progress > 0 && (
-            <div style={{ marginTop: '12px' }}>
+            <div className="progress-container">
               <div 
                 role="progressbar"
                 aria-valuemin="0"
                 aria-valuemax="100"
                 aria-valuenow={progress}
                 aria-label="Analysis progress"
-                style={{
-                  width: '100%',
-                  height: '4px',
-                  backgroundColor: '#DFE1E6',
-                  borderRadius: '2px',
-                  overflow: 'hidden'
-                }}>
-                <div style={{
-                  width: `${progress}%`,
-                  height: '100%',
-                  backgroundColor: '#0052CC',
-                  transition: 'width 0.3s ease'
-                }} />
+                className="progress-bar">
+                <div 
+                  className="progress-bar-fill"
+                  style={{ width: `${progress}%` }}
+                />
               </div>
-              <div style={{
-                fontSize: '11px',
-                color: '#5E6C84',
-                marginTop: '4px',
-                textAlign: 'center'
-              }}>
+              <div className="progress-text">
                 Analyzing... {progress}%
               </div>
             </div>
@@ -336,53 +267,30 @@ function App() {
       )}
 
       {error && (
-        <div style={{
-          padding: '12px',
-          backgroundColor: '#FFEBE6',
-          border: '1px solid #FF5630',
-          borderRadius: '3px',
-          marginTop: '10px',
-          color: '#BF2600'
-        }}>
+        <div className="error-message">
           ⚠️ {error}
         </div>
       )}
 
       {successMessage && (
-        <div style={{
-          padding: '12px',
-          backgroundColor: '#E3FCEF',
-          border: '1px solid #00875A',
-          borderRadius: '3px',
-          marginTop: '10px',
-          color: '#006644'
-        }}>
-          <div style={{ fontWeight: 'bold', marginBottom: '8px' }}>
+        <div className="success-message">
+          <div className="success-message-title">
             ✅ Triage result applied successfully!
           </div>
-          <div style={{ fontSize: '12px', marginBottom: '4px' }}>
+          <div className="success-message-text">
             The issue has been updated with:
           </div>
-          <ul style={{ margin: '4px 0', paddingLeft: '20px', fontSize: '12px' }}>
+          <ul className="success-message-list">
             <li>Priority: <strong>{successMessage.priority}</strong></li>
             <li>Assignee: <strong>{successMessage.assignee}</strong></li>
             <li>Labels: <strong>{successMessage.category}, {successMessage.subCategory}</strong></li>
           </ul>
-          <div style={{ fontSize: '11px', marginTop: '8px', fontStyle: 'italic' }}>
+          <div className="success-message-note">
             🔄 Refresh the page to see changes in the main issue view
           </div>
           <button
             onClick={() => setSuccessMessage(null)}
-            style={{
-              marginTop: '8px',
-              padding: '4px 8px',
-              backgroundColor: '#00875A',
-              color: 'white',
-              border: 'none',
-              borderRadius: '3px',
-              fontSize: '11px',
-              cursor: 'pointer'
-            }}
+            className="dismiss-button"
           >
             Dismiss
           </button>
@@ -390,91 +298,63 @@ function App() {
       )}
 
       {triageResult && (
-        <div style={{ marginTop: '16px' }}>
+        <div className="triage-result">
           {/* Confidence Score */}
-          <div style={{
-            padding: '12px',
-            backgroundColor: getConfidenceColor(triageResult.confidence).background,
-            borderRadius: '3px',
-            marginBottom: '15px',
-            border: `1px solid ${getConfidenceColor(triageResult.confidence).border}`
-          }}>
-            <div style={{ fontSize: '12px', color: '#5E6C84', marginBottom: '4px' }}>
+          <div className={`confidence-box ${getConfidenceClass(triageResult.confidence)}`}>
+            <div className="confidence-label">
               Confidence Score
             </div>
-            <div style={{ fontSize: '20px', fontWeight: 'bold', color: '#172B4D' }}>
+            <div className="confidence-value">
               {triageResult.confidence}%
             </div>
           </div>
 
           {/* Category */}
-          <div style={{ marginBottom: '15px' }}>
-            <h3 style={{ fontSize: '13px', color: '#172B4D', marginBottom: '8px', fontWeight: 'bold' }}>
+          <div className="section">
+            <h3 className="section-title">
               📁 Category
             </h3>
-            <div style={{
-              padding: '8px',
-              backgroundColor: '#F4F5F7',
-              borderRadius: '3px',
-              fontSize: '13px'
-            }}>
-              <span style={{ color: '#172B4D', fontWeight: '500' }}>
+            <div className="category-box">
+              <span className="category-primary">
                 {triageResult.category}
               </span>
-              <span style={{ color: '#5E6C84', margin: '0 6px' }}>›</span>
-              <span style={{ color: '#5E6C84' }}>
+              <span className="category-separator">›</span>
+              <span className="category-secondary">
                 {triageResult.subCategory}
               </span>
             </div>
           </div>
 
           {/* Priority & Urgency */}
-          <div style={{ marginBottom: '15px' }}>
-            <h3 style={{ fontSize: '13px', color: '#172B4D', marginBottom: '8px', fontWeight: 'bold' }}>
+          <div className="section">
+            <h3 className="section-title">
               ⚡ Priority & Urgency
             </h3>
-            <div style={{ display: 'flex', gap: '8px' }}>
-              <div style={{
-                flex: 1,
-                padding: '8px',
-                backgroundColor: '#F4F5F7',
-                borderRadius: '3px',
-                fontSize: '12px'
-              }}>
-                <div style={{ color: '#5E6C84', marginBottom: '4px' }}>Priority</div>
-                <div style={{ color: '#172B4D', fontWeight: 'bold' }}>{triageResult.priority}</div>
+            <div className="priority-urgency-container">
+              <div className="priority-urgency-box">
+                <div className="priority-urgency-label">Priority</div>
+                <div className="priority-urgency-value">{triageResult.priority}</div>
               </div>
-              <div style={{
-                flex: 1,
-                padding: '8px',
-                backgroundColor: '#F4F5F7',
-                borderRadius: '3px',
-                fontSize: '12px'
-              }}>
-                <div style={{ color: '#5E6C84', marginBottom: '4px' }}>Urgency</div>
-                <div style={{ color: '#172B4D', fontWeight: 'bold' }}>{triageResult.urgency}</div>
+              <div className="priority-urgency-box">
+                <div className="priority-urgency-label">Urgency</div>
+                <div className="priority-urgency-value">{triageResult.urgency}</div>
               </div>
             </div>
           </div>
 
           {/* Suggested Assignee */}
-          <div style={{ marginBottom: '15px' }}>
-            <h3 style={{ fontSize: '13px', color: '#172B4D', marginBottom: '8px', fontWeight: 'bold' }}>
+          <div className="section">
+            <h3 className="section-title">
               👤 Suggested Assignee
             </h3>
-            <div style={{
-              padding: '10px',
-              backgroundColor: '#DEEBFF',
-              borderRadius: '3px',
-              border: '1px solid #B3D4FF'
-            }}>
-              <div style={{ fontSize: '14px', fontWeight: 'bold', color: '#172B4D', marginBottom: '6px' }}>
+            <div className="assignee-box">
+              <div className="assignee-name">
                 {triageResult.suggestedAssignee.name}
               </div>
-              <div style={{ fontSize: '12px', color: '#5E6C84', marginBottom: '4px' }}>
+              <div className="assignee-reason">
                 ✓ {triageResult.suggestedAssignee.reason}
               </div>
-              <div style={{ fontSize: '11px', color: '#5E6C84' }}>
+              <div className="assignee-time">
                 ⏱️ Avg resolution: {triageResult.suggestedAssignee.estimatedTime}
               </div>
             </div>
@@ -482,33 +362,19 @@ function App() {
 
           {/* Similar Tickets */}
           {triageResult.similarTickets && triageResult.similarTickets.length > 0 && (
-            <div style={{ marginBottom: '15px' }}>
-              <h3 style={{ fontSize: '13px', color: '#172B4D', marginBottom: '8px', fontWeight: 'bold' }}>
+            <div className="section">
+              <h3 className="section-title">
                 🔍 Similar Tickets ({triageResult.similarTickets.length})
               </h3>
               {triageResult.similarTickets.slice(0, 3).map((ticket, index) => (
-                <div key={index} style={{
-                  padding: '8px',
-                  backgroundColor: '#F4F5F7',
-                  borderRadius: '3px',
-                  marginBottom: '6px',
-                  fontSize: '11px',
-                  border: '1px solid #DFE1E6'
-                }}>
-                  <div style={{ fontWeight: 'bold', color: '#172B4D', marginBottom: '4px' }}>
+                <div key={index} className="similar-ticket">
+                  <div className="similar-ticket-header">
                     {ticket.id} 
-                    <span style={{ 
-                      marginLeft: '6px',
-                      padding: '2px 6px',
-                      backgroundColor: '#E3FCEF',
-                      borderRadius: '3px',
-                      fontSize: '10px',
-                      color: '#00875A'
-                    }}>
+                    <span className="similarity-badge">
                       {Math.round(ticket.similarity * 100)}% similar
                     </span>
                   </div>
-                  <div style={{ color: '#5E6C84' }}>
+                  <div className="similar-ticket-solution">
                     {ticket.solution}
                   </div>
                 </div>
@@ -518,42 +384,23 @@ function App() {
 
           {/* Reasoning */}
           {triageResult.reasoning && (
-            <div style={{ marginBottom: '15px' }}>
-              <h3 style={{ fontSize: '13px', color: '#172B4D', marginBottom: '8px', fontWeight: 'bold' }}>
+            <div className="section">
+              <h3 className="section-title">
                 💡 Reasoning
               </h3>
-              <div style={{
-                padding: '10px',
-                backgroundColor: '#F4F5F7',
-                borderRadius: '3px',
-                fontSize: '12px',
-                color: '#5E6C84',
-                lineHeight: '1.5'
-              }}>
+              <div className="reasoning-box">
                 {triageResult.reasoning}
               </div>
             </div>
           )}
 
           {/* Action Buttons */}
-          <div style={{ marginTop: '20px', display: 'flex', gap: '8px' }} aria-live="polite">
+          <div className="action-buttons" aria-live="polite">
             <button
               onClick={handleApproveClick}
               disabled={loading}
               className="approve-button"
               aria-busy={loading}
-              style={{
-                flex: 1,
-                padding: '10px',
-                backgroundColor: loading ? '#DFE1E6' : '#0052CC',
-                color: loading ? '#5E6C84' : 'white',
-                border: 'none',
-                borderRadius: '3px',
-                fontSize: '13px',
-                fontWeight: 'bold',
-                cursor: loading ? 'not-allowed' : 'pointer',
-                transition: 'background-color 0.2s'
-              }}
             >
               {loading ? 'Applying...' : 'Approve & Apply'}
             </button>
@@ -561,18 +408,6 @@ function App() {
               onClick={handleReject}
               disabled={loading}
               className="reject-button"
-              style={{
-                flex: 1,
-                padding: '10px',
-                backgroundColor: '#DFE1E6',
-                color: '#172B4D',
-                border: 'none',
-                borderRadius: '3px',
-                fontSize: '13px',
-                fontWeight: 'bold',
-                cursor: loading ? 'not-allowed' : 'pointer',
-                transition: 'background-color 0.2s'
-              }}
             >
               Reject
             </button>
@@ -586,85 +421,33 @@ function App() {
           role="dialog"
           aria-modal="true"
           aria-labelledby="confirm-dialog-title"
-          style={{
-            position: 'fixed',
-            top: 0,
-            left: 0,
-            right: 0,
-            bottom: 0,
-            backgroundColor: 'rgba(9, 30, 66, 0.54)',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            zIndex: 1000
-          }}>
-          <div style={{
-            backgroundColor: 'white',
-            borderRadius: '3px',
-            padding: '20px',
-            maxWidth: '400px',
-            width: '90%',
-            boxShadow: '0 8px 16px rgba(9, 30, 66, 0.25)'
-          }}>
+          className="dialog-overlay">
+          <div className="dialog-content">
             <h3 
               id="confirm-dialog-title"
-              style={{
-                margin: '0 0 12px 0',
-                fontSize: '16px',
-                color: '#172B4D',
-                fontWeight: 'bold'
-              }}>
+              className="dialog-title">
               Confirm Triage Application
             </h3>
-            <p style={{
-              margin: '0 0 16px 0',
-              fontSize: '13px',
-              color: '#5E6C84',
-              lineHeight: '1.5'
-            }}>
+            <p className="dialog-text">
               Are you sure you want to apply the following changes to this issue?
             </p>
-            <ul style={{
-              margin: '0 0 20px 0',
-              paddingLeft: '20px',
-              fontSize: '13px',
-              color: '#172B4D'
-            }}>
+            <ul className="dialog-list">
               <li>Priority: <strong>{triageResult?.priority || 'N/A'}</strong></li>
               <li>Assignee: <strong>{triageResult?.suggestedAssignee?.name || 'N/A'}</strong></li>
               <li>Labels: <strong>{triageResult?.category || 'N/A'}, {triageResult?.subCategory || 'N/A'}</strong></li>
             </ul>
-            <div style={{ display: 'flex', gap: '8px', justifyContent: 'flex-end' }}>
+            <div className="dialog-buttons">
               <button
                 onClick={handleApproveCancel}
                 aria-label="Cancel triage application"
-                style={{
-                  padding: '8px 16px',
-                  backgroundColor: '#DFE1E6',
-                  color: '#172B4D',
-                  border: 'none',
-                  borderRadius: '3px',
-                  fontSize: '13px',
-                  fontWeight: 'bold',
-                  cursor: 'pointer'
-                }}
+                className="dialog-cancel-button"
               >
                 Cancel
               </button>
               <button
                 onClick={handleApproveConfirm}
-                className="approve-button"
                 aria-label="Confirm triage application"
-                style={{
-                  padding: '8px 16px',
-                  backgroundColor: '#0052CC',
-                  color: 'white',
-                  border: 'none',
-                  borderRadius: '3px',
-                  fontSize: '13px',
-                  fontWeight: 'bold',
-                  cursor: 'pointer'
-                }}
+                className="dialog-confirm-button"
               >
                 Confirm
               </button>

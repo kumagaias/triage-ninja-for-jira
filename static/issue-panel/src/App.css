@@ -1,0 +1,493 @@
+/* AI Triage Panel Styles */
+
+/* Reset body and html */
+html, body {
+  margin: 0;
+  padding: 0;
+  background-color: var(--bg-primary);
+  color: var(--text-primary);
+}
+
+#root {
+  min-height: 100vh;
+  background-color: var(--bg-primary);
+}
+
+/* Light mode colors (default) */
+:root {
+  --bg-primary: #FFFFFF;
+  --bg-secondary: #F4F5F7;
+  --bg-tertiary: #DEEBFF;
+  --bg-success: #E3FCEF;
+  --bg-warning: #FFF0B3;
+  --bg-error: #FFEBE6;
+  
+  --text-primary: #172B4D;
+  --text-secondary: #5E6C84;
+  --text-link: #0052CC;
+  --text-success: #006644;
+  --text-error: #BF2600;
+  
+  --border-primary: #DFE1E6;
+  --border-success: #00875A;
+  --border-warning: #FF991F;
+  --border-error: #FF5630;
+  --border-info: #B3D4FF;
+  
+  --button-primary: #0052CC;
+  --button-primary-hover: #0747A6;
+  --button-secondary: #DFE1E6;
+  --button-secondary-hover: #C1C7D0;
+  --button-disabled: #DFE1E6;
+  --button-disabled-text: #5E6C84;
+}
+
+/* Dark mode colors */
+@media (prefers-color-scheme: dark) {
+  :root {
+    --bg-primary: #1D2125;
+    --bg-secondary: #22272B;
+    --bg-tertiary: #1C2B41;
+    --bg-success: #164B35;
+    --bg-warning: #533F04;
+    --bg-error: #5D1F1A;
+    
+    --text-primary: #B6C2CF;
+    --text-secondary: #8C9BAB;
+    --text-link: #579DFF;
+    --text-success: #4BCE97;
+    --text-error: #F87168;
+    
+    --border-primary: #38414A;
+    --border-success: #1F845A;
+    --border-warning: #946F00;
+    --border-error: #AE2E24;
+    --border-info: #1C2B41;
+    
+    --button-primary: #579DFF;
+    --button-primary-hover: #85B8FF;
+    --button-secondary: #38414A;
+    --button-secondary-hover: #596773;
+    --button-disabled: #38414A;
+    --button-disabled-text: #626F86;
+  }
+}
+
+.ai-triage-container {
+  padding: 16px;
+  font-family: Arial, sans-serif;
+  background-color: var(--bg-primary);
+  color: var(--text-primary);
+  min-height: 100vh;
+}
+
+.ai-triage-header {
+  margin-top: 0;
+  color: var(--text-primary);
+  font-size: 18px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.status-box {
+  padding: 10px;
+  background-color: var(--bg-secondary);
+  border-radius: 3px;
+  margin-bottom: 12px;
+  font-size: 13px;
+}
+
+.status-label {
+  color: var(--text-secondary);
+  margin-bottom: 4px;
+}
+
+.status-value {
+  color: var(--text-primary);
+  font-weight: bold;
+}
+
+.run-triage-button {
+  width: 100%;
+  padding: 12px;
+  background-color: var(--button-primary);
+  color: white;
+  border: none;
+  border-radius: 3px;
+  font-size: 14px;
+  font-weight: bold;
+  cursor: pointer;
+  margin-top: 10px;
+  transition: background-color 0.2s;
+}
+
+.run-triage-button:hover:not(:disabled) {
+  background-color: var(--button-primary-hover);
+}
+
+.run-triage-button:disabled {
+  background-color: var(--button-disabled);
+  color: var(--button-disabled-text);
+  cursor: not-allowed;
+}
+
+.progress-container {
+  margin-top: 12px;
+}
+
+.progress-bar {
+  width: 100%;
+  height: 4px;
+  background-color: var(--bg-secondary);
+  border-radius: 2px;
+  overflow: hidden;
+}
+
+.progress-bar-fill {
+  height: 100%;
+  background-color: var(--button-primary);
+  transition: width 0.3s ease;
+}
+
+.progress-text {
+  font-size: 11px;
+  color: var(--text-secondary);
+  margin-top: 4px;
+  text-align: center;
+}
+
+.error-message {
+  padding: 12px;
+  background-color: var(--bg-error);
+  border: 1px solid var(--border-error);
+  border-radius: 3px;
+  margin-top: 10px;
+  color: var(--text-error);
+}
+
+.success-message {
+  padding: 12px;
+  background-color: var(--bg-success);
+  border: 1px solid var(--border-success);
+  border-radius: 3px;
+  margin-top: 10px;
+  color: var(--text-success);
+}
+
+.success-message-title {
+  font-weight: bold;
+  margin-bottom: 8px;
+}
+
+.success-message-text {
+  font-size: 12px;
+  margin-bottom: 4px;
+}
+
+.success-message-list {
+  margin: 4px 0;
+  padding-left: 20px;
+  font-size: 12px;
+}
+
+.success-message-note {
+  font-size: 11px;
+  margin-top: 8px;
+  font-style: italic;
+}
+
+.dismiss-button {
+  margin-top: 8px;
+  padding: 4px 8px;
+  background-color: var(--border-success);
+  color: white;
+  border: none;
+  border-radius: 3px;
+  font-size: 11px;
+  cursor: pointer;
+}
+
+.triage-result {
+  margin-top: 16px;
+}
+
+.confidence-box {
+  padding: 12px;
+  border-radius: 3px;
+  margin-bottom: 15px;
+  border: 1px solid;
+}
+
+.confidence-box.high {
+  background-color: var(--bg-success);
+  border-color: var(--border-success);
+}
+
+.confidence-box.medium {
+  background-color: var(--bg-warning);
+  border-color: var(--border-warning);
+}
+
+.confidence-box.low {
+  background-color: var(--bg-error);
+  border-color: var(--border-error);
+}
+
+.confidence-label {
+  font-size: 12px;
+  color: var(--text-secondary);
+  margin-bottom: 4px;
+}
+
+.confidence-value {
+  font-size: 20px;
+  font-weight: bold;
+  color: var(--text-primary);
+}
+
+.section {
+  margin-bottom: 15px;
+}
+
+.section-title {
+  font-size: 13px;
+  color: var(--text-primary);
+  margin-bottom: 8px;
+  font-weight: bold;
+}
+
+.category-box {
+  padding: 8px;
+  background-color: var(--bg-secondary);
+  border-radius: 3px;
+  font-size: 13px;
+}
+
+.category-primary {
+  color: var(--text-primary);
+  font-weight: 500;
+}
+
+.category-separator {
+  color: var(--text-secondary);
+  margin: 0 6px;
+}
+
+.category-secondary {
+  color: var(--text-secondary);
+}
+
+.priority-urgency-container {
+  display: flex;
+  gap: 8px;
+}
+
+.priority-urgency-box {
+  flex: 1;
+  padding: 8px;
+  background-color: var(--bg-secondary);
+  border-radius: 3px;
+  font-size: 12px;
+}
+
+.priority-urgency-label {
+  color: var(--text-secondary);
+  margin-bottom: 4px;
+}
+
+.priority-urgency-value {
+  color: var(--text-primary);
+  font-weight: bold;
+}
+
+.assignee-box {
+  padding: 10px;
+  background-color: var(--bg-tertiary);
+  border-radius: 3px;
+  border: 1px solid var(--border-info);
+}
+
+.assignee-name {
+  font-size: 14px;
+  font-weight: bold;
+  color: var(--text-primary);
+  margin-bottom: 6px;
+}
+
+.assignee-reason {
+  font-size: 12px;
+  color: var(--text-secondary);
+  margin-bottom: 4px;
+}
+
+.assignee-time {
+  font-size: 11px;
+  color: var(--text-secondary);
+}
+
+.similar-ticket {
+  padding: 8px;
+  background-color: var(--bg-secondary);
+  border-radius: 3px;
+  margin-bottom: 6px;
+  font-size: 11px;
+  border: 1px solid var(--border-primary);
+}
+
+.similar-ticket-header {
+  font-weight: bold;
+  color: var(--text-primary);
+  margin-bottom: 4px;
+}
+
+.similarity-badge {
+  margin-left: 6px;
+  padding: 2px 6px;
+  background-color: var(--bg-success);
+  border-radius: 3px;
+  font-size: 10px;
+  color: var(--text-success);
+}
+
+.similar-ticket-solution {
+  color: var(--text-secondary);
+}
+
+.reasoning-box {
+  padding: 10px;
+  background-color: var(--bg-secondary);
+  border-radius: 3px;
+  font-size: 12px;
+  color: var(--text-secondary);
+  line-height: 1.5;
+}
+
+.action-buttons {
+  margin-top: 20px;
+  display: flex;
+  gap: 8px;
+}
+
+.approve-button {
+  flex: 1;
+  padding: 10px;
+  background-color: var(--button-primary);
+  color: white;
+  border: none;
+  border-radius: 3px;
+  font-size: 13px;
+  font-weight: bold;
+  cursor: pointer;
+  transition: background-color 0.2s;
+}
+
+.approve-button:hover:not(:disabled) {
+  background-color: var(--button-primary-hover);
+}
+
+.approve-button:disabled {
+  background-color: var(--button-disabled);
+  color: var(--button-disabled-text);
+  cursor: not-allowed;
+}
+
+.reject-button {
+  flex: 1;
+  padding: 10px;
+  background-color: var(--button-secondary);
+  color: var(--text-primary);
+  border: none;
+  border-radius: 3px;
+  font-size: 13px;
+  font-weight: bold;
+  cursor: pointer;
+  transition: background-color 0.2s;
+}
+
+.reject-button:hover:not(:disabled) {
+  background-color: var(--button-secondary-hover);
+}
+
+.reject-button:disabled {
+  cursor: not-allowed;
+}
+
+.loading-container {
+  padding: 20px;
+  text-align: center;
+  background-color: var(--bg-primary);
+  color: var(--text-primary);
+  min-height: 100vh;
+}
+
+.dialog-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: rgba(9, 30, 66, 0.54);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+}
+
+.dialog-content {
+  background-color: var(--bg-primary);
+  border-radius: 3px;
+  padding: 20px;
+  max-width: 400px;
+  width: 90%;
+  box-shadow: 0 8px 16px rgba(9, 30, 66, 0.25);
+}
+
+.dialog-title {
+  margin: 0 0 12px 0;
+  font-size: 16px;
+  color: var(--text-primary);
+  font-weight: bold;
+}
+
+.dialog-text {
+  margin: 0 0 16px 0;
+  font-size: 13px;
+  color: var(--text-secondary);
+  line-height: 1.5;
+}
+
+.dialog-list {
+  margin: 0 0 20px 0;
+  padding-left: 20px;
+  font-size: 13px;
+  color: var(--text-primary);
+}
+
+.dialog-buttons {
+  display: flex;
+  gap: 8px;
+  justify-content: flex-end;
+}
+
+.dialog-cancel-button {
+  padding: 8px 16px;
+  background-color: var(--button-secondary);
+  color: var(--text-primary);
+  border: none;
+  border-radius: 3px;
+  font-size: 13px;
+  font-weight: bold;
+  cursor: pointer;
+}
+
+.dialog-confirm-button {
+  padding: 8px 16px;
+  background-color: var(--button-primary);
+  color: white;
+  border: none;
+  border-radius: 3px;
+  font-size: 13px;
+  font-weight: bold;
+  cursor: pointer;
+}
