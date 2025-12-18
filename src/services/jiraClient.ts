@@ -217,4 +217,29 @@ export class JiraClient {
       return this.handleApiError<void>(error, 'assign issue');
     }
   }
+
+  /**
+   * Create a new issue
+   * @param issueData - Issue creation data
+   * @returns Promise with created issue data or error
+   */
+  static async createIssue(
+    issueData: { fields: any }
+  ): Promise<ApiResponse<{ key: string; id: string }>> {
+    try {
+      const response = await api
+        .asUser()
+        .requestJira(route`/rest/api/3/issue`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify(issueData),
+        });
+
+      return this.handleResponse<{ key: string; id: string }>(response);
+    } catch (error) {
+      return this.handleApiError<{ key: string; id: string }>(error, 'create issue');
+    }
+  }
 }

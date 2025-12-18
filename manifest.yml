@@ -5,8 +5,8 @@ modules:
       resource: dashboard
       resolver:
         function: dashboard-resolver
-      title: TriageNinja Dashboard
-      icon: https://developer.atlassian.com/platform/forge/images/project-page-icon.svg
+      title: TriageNinja
+      icon: https://kumagaias.github.io/triage-ninja-for-jira/assets/triageninja-icon.png
   
   # AI Triage Panel - Issue Panel
   jira:issuePanel:
@@ -16,7 +16,7 @@ modules:
         function: issue-panel-resolver
       viewportSize: medium
       title: AI Triage
-      icon: https://developer.atlassian.com/platform/forge/images/issue-panel-icon.svg
+      icon: https://kumagaias.github.io/triage-ninja-for-jira/assets/triageninja-icon.png
       layout:
         type: basic
   

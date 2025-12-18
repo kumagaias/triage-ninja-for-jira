@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react';
-import { invoke } from '@forge/bridge';
+import { invoke, view } from '@forge/bridge';
+import { getTranslations } from './i18n';
 import './App.css';
 
 // Helper function to get confidence CSS class based on score
@@ -27,12 +28,30 @@ function App() {
   const [successMessage, setSuccessMessage] = useState(null);
   const [showConfirmDialog, setShowConfirmDialog] = useState(false);
   const [progress, setProgress] = useState(0);
+  const [locale, setLocale] = useState('en');
   
   // Use refs to track timers and prevent race conditions
   const progressIntervalRef = React.useRef(null);
   const timeoutIdRef = React.useRef(null);
   const progressResetTimeoutRef = React.useRef(null);
   const isCancelledRef = React.useRef(false);
+  
+  const t = getTranslations(locale);
+
+  // Get user locale on mount
+  useEffect(() => {
+    const getUserLocale = async () => {
+      try {
+        const context = await view.getContext();
+        setLocale(context.locale || 'en');
+      } catch (err) {
+        console.error('Failed to get user locale:', err);
+        setLocale('en');
+      }
+    };
+    
+    getUserLocale();
+  }, []);
 
   // Fetch issue details on component mount
   useEffect(() => {
@@ -44,7 +63,7 @@ function App() {
         setIssueDetails(details);
       } catch (err) {
         console.error('[AI Triage] Failed to fetch issue details:', err);
-        setError('Failed to load issue details. Please refresh the page.');
+        setError(t.failedToLoadIssue);
       }
     };
     fetchIssueDetails();
@@ -69,7 +88,7 @@ function App() {
   const handleRunTriage = async () => {
     // Defensive check: ensure issueDetails is loaded
     if (!issueDetails) {
-      setError('Issue details not loaded. Please refresh the page.');
+      setError(t.issueDetailsNotLoaded);
       return;
     }
     
@@ -115,7 +134,7 @@ function App() {
       clearInterval(progressIntervalRef.current);
       setLoading(false);
       setProgress(0);
-      setError('Analysis timed out after 30 seconds. Please try again.');
+      setError(t.analysisTimeout);
     }, 30000);
     
     try {
@@ -149,7 +168,7 @@ function App() {
         clearTimeout(timeoutIdRef.current);
         clearInterval(progressIntervalRef.current);
         console.error('Failed to run AI triage:', err);
-        setError('Failed to analyze ticket. Please try again.');
+        setError(t.analysisFailed);
         setLoading(false);
         setProgress(0);
       }
@@ -192,7 +211,7 @@ function App() {
       setIssueDetails(details);
     } catch (err) {
       console.error('Failed to apply triage result:', err);
-      setError('Failed to apply triage result. Please try again.');
+      setError(t.applyFailed);
     } finally {
       setLoading(false);
     }
@@ -212,7 +231,7 @@ function App() {
   if (!issueDetails) {
     return (
       <div className="loading-container">
-        <div>Loading issue details...</div>
+        <div>{t.loadingIssueDetails}</div>
       </div>
     );
   }
@@ -221,17 +240,17 @@ function App() {
     <div className="ai-triage-container">
       <h2 className="ai-triage-header">
         <span>🥷</span>
-        <span>AI Triage</span>
+        <span>{t.aiTriage}</span>
       </h2>
       
       {!triageResult && (
         <div>
           <div className="status-box">
             <div className="status-label">
-              Status:
+              {t.status}:
             </div>
             <div className="status-value">
-              Not Triaged
+              {t.notTriaged}
             </div>
           </div>
           <button
@@ -242,10 +261,10 @@ function App() {
           >
             {loading ? (
               <>
-                <span className="spinner">⚡</span> Analyzing...
+                <span className="spinner">⚡</span> {t.analyzing}
               </>
             ) : (
-              '🥷 Run AI Triage'
+              t.runAITriage
             )}
           </button>
           
@@ -265,7 +284,7 @@ function App() {
                 />
               </div>
               <div className="progress-text">
-                Analyzing... {progress}%
+                {t.analyzingProgress}... {progress}%
               </div>
             </div>
           )}
@@ -281,24 +300,24 @@ function App() {
       {successMessage && (
         <div className="success-message">
           <div className="success-message-title">
-            ✅ Triage result applied successfully!
+            ✅ {t.triageAppliedSuccess}
           </div>
           <div className="success-message-text">
-            The issue has been updated with:
+            {t.issueUpdatedWith}
           </div>
           <ul className="success-message-list">
-            <li>Priority: <strong>{successMessage.priority}</strong></li>
-            <li>Assignee: <strong>{successMessage.assignee}</strong></li>
-            <li>Labels: <strong>{successMessage.category}, {successMessage.subCategory}</strong></li>
+            <li>{t.priority}: <strong>{successMessage.priority}</strong></li>
+            <li>{t.assignee}: <strong>{successMessage.assignee}</strong></li>
+            <li>{t.labels}: <strong>{successMessage.category}, {successMessage.subCategory}</strong></li>
           </ul>
           <div className="success-message-note">
-            🔄 Refresh the page to see changes in the main issue view
+            {t.refreshNote}
           </div>
           <button
             onClick={() => setSuccessMessage(null)}
             className="dismiss-button"
           >
-            Dismiss
+            {t.dismiss}
           </button>
         </div>
       )}
@@ -308,7 +327,7 @@ function App() {
           {/* Confidence Score */}
           <div className={`confidence-box ${getConfidenceClass(triageResult.confidence)}`}>
             <div className="confidence-label">
-              Confidence Score
+              {t.confidenceScore}
             </div>
             <div className="confidence-value">
               {triageResult.confidence}%
@@ -318,7 +337,7 @@ function App() {
           {/* Category */}
           <div className="section">
             <h3 className="section-title">
-              📁 Category
+              📁 {t.category}
             </h3>
             <div className="category-box">
               <span className="category-primary">
@@ -334,15 +353,15 @@ function App() {
           {/* Priority & Urgency */}
           <div className="section">
             <h3 className="section-title">
-              ⚡ Priority & Urgency
+              ⚡ {t.priorityAndUrgency}
             </h3>
             <div className="priority-urgency-container">
               <div className="priority-urgency-box">
-                <div className="priority-urgency-label">Priority</div>
+                <div className="priority-urgency-label">{t.priority}</div>
                 <div className="priority-urgency-value">{triageResult.priority}</div>
               </div>
               <div className="priority-urgency-box">
-                <div className="priority-urgency-label">Urgency</div>
+                <div className="priority-urgency-label">{t.urgency}</div>
                 <div className="priority-urgency-value">{triageResult.urgency}</div>
               </div>
             </div>
@@ -351,7 +370,7 @@ function App() {
           {/* Suggested Assignee */}
           <div className="section">
             <h3 className="section-title">
-              👤 Suggested Assignee
+              👤 {t.suggestedAssignee}
             </h3>
             <div className="assignee-box">
               <div className="assignee-name">
@@ -361,7 +380,7 @@ function App() {
                 ✓ {triageResult.suggestedAssignee.reason}
               </div>
               <div className="assignee-time">
-                ⏱️ Avg resolution: {triageResult.suggestedAssignee.estimatedTime}
+                ⏱️ {t.avgResolution}: {triageResult.suggestedAssignee.estimatedTime}
               </div>
             </div>
           </div>
@@ -370,14 +389,14 @@ function App() {
           {triageResult.similarTickets && triageResult.similarTickets.length > 0 && (
             <div className="section">
               <h3 className="section-title">
-                🔍 Similar Tickets ({triageResult.similarTickets.length})
+                🔍 {t.similarTickets} ({triageResult.similarTickets.length})
               </h3>
               {triageResult.similarTickets.slice(0, 3).map((ticket, index) => (
                 <div key={index} className="similar-ticket">
                   <div className="similar-ticket-header">
                     {ticket.id} 
                     <span className="similarity-badge">
-                      {Math.round(ticket.similarity * 100)}% similar
+                      {Math.round(ticket.similarity * 100)}% {t.similar}
                     </span>
                   </div>
                   <div className="similar-ticket-solution">
@@ -392,7 +411,7 @@ function App() {
           {triageResult.reasoning && (
             <div className="section">
               <h3 className="section-title">
-                💡 Reasoning
+                💡 {t.reasoning}
               </h3>
               <div className="reasoning-box">
                 {triageResult.reasoning}
@@ -408,14 +427,14 @@ function App() {
               className="approve-button"
               aria-busy={loading}
             >
-              {loading ? 'Applying...' : 'Approve & Apply'}
+              {loading ? t.applying : t.approveAndApply}
             </button>
             <button
               onClick={handleReject}
               disabled={loading}
               className="reject-button"
             >
-              Reject
+              {t.reject}
             </button>
           </div>
         </div>
@@ -432,15 +451,15 @@ function App() {
             <h3 
               id="confirm-dialog-title"
               className="dialog-title">
-              Confirm Triage Application
+              {t.confirmTriageApplication}
             </h3>
             <p className="dialog-text">
-              Are you sure you want to apply the following changes to this issue?
+              {t.confirmApplyChanges}
             </p>
             <ul className="dialog-list">
-              <li>Priority: <strong>{triageResult?.priority || 'N/A'}</strong></li>
-              <li>Assignee: <strong>{triageResult?.suggestedAssignee?.name || 'N/A'}</strong></li>
-              <li>Labels: <strong>{triageResult?.category || 'N/A'}, {triageResult?.subCategory || 'N/A'}</strong></li>
+              <li>{t.priority}: <strong>{triageResult?.priority || 'N/A'}</strong></li>
+              <li>{t.assignee}: <strong>{triageResult?.suggestedAssignee?.name || 'N/A'}</strong></li>
+              <li>{t.labels}: <strong>{triageResult?.category || 'N/A'}, {triageResult?.subCategory || 'N/A'}</strong></li>
             </ul>
             <div className="dialog-buttons">
               <button
@@ -448,14 +467,14 @@ function App() {
                 aria-label="Cancel triage application"
                 className="dialog-cancel-button"
               >
-                Cancel
+                {t.cancel}
               </button>
               <button
                 onClick={handleApproveConfirm}
                 aria-label="Confirm triage application"
                 className="dialog-confirm-button"
               >
-                Confirm
+                {t.confirm}
               </button>
             </div>
           </div>

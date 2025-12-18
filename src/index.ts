@@ -13,18 +13,18 @@ const dashboardResolver = new Resolver();
 
 /**
  * Fetch untriaged tickets for the dashboard
- * Returns a list of tickets that haven't been triaged yet
+ * Returns a list of tickets that haven't been triaged yet (no assignee)
  */
 dashboardResolver.define('getUntriagedTickets', async (req) => {
   const projectKey = req.context.extension.project.key;
   
-  // JQL query to find untriaged tickets
-  const jql = `project = ${projectKey} AND status = Open ORDER BY created DESC`;
+  // JQL query to find untriaged tickets (no assignee = not triaged)
+  const jql = `project = ${projectKey} AND assignee is EMPTY AND status = Open ORDER BY created DESC`;
   
   const response = await JiraClient.searchIssues({
     jql,
     maxResults: 50,
-    fields: ['summary', 'priority', 'created', 'reporter']
+    fields: ['summary', 'priority', 'created', 'reporter', 'assignee']
   });
   
   if (!response.ok || !response.data) {
@@ -40,13 +40,99 @@ dashboardResolver.define('getUntriagedTickets', async (req) => {
  * Returns metrics for the dashboard cards
  */
 dashboardResolver.define('getStatistics', async (req) => {
-  // Mock statistics for now - will be replaced with real data from Forge Storage
-  return {
-    untriagedCount: 24,
-    todayProcessed: 156,
-    timeSaved: 78,
-    aiAccuracy: 94
-  };
+  const projectKey = req.context.extension.project.key;
+  
+  try {
+    // Get untriaged tickets count (no assignee)
+    const untriagedResponse = await JiraClient.searchIssues({
+      jql: `project = ${projectKey} AND assignee is EMPTY AND status = Open`,
+      maxResults: 0, // We only need the count
+      fields: []
+    });
+    
+    // Get today's processed tickets (assigned today)
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    const todayStr = today.toISOString().split('T')[0];
+    
+    const todayProcessedResponse = await JiraClient.searchIssues({
+      jql: `project = ${projectKey} AND assignee is not EMPTY AND updated >= "${todayStr}"`,
+      maxResults: 0,
+      fields: []
+    });
+    
+    return {
+      untriagedCount: untriagedResponse.ok ? untriagedResponse.data?.total || 0 : 0,
+      todayProcessed: todayProcessedResponse.ok ? todayProcessedResponse.data?.total || 0 : 0,
+      timeSaved: 78, // Mock data - will be calculated based on historical data
+      aiAccuracy: 94  // Mock data - will be calculated based on feedback
+    };
+  } catch (error) {
+    console.error('Failed to fetch statistics:', error);
+    // Return zeros on error
+    return {
+      untriagedCount: 0,
+      todayProcessed: 0,
+      timeSaved: 0,
+      aiAccuracy: 0
+    };
+  }
+});
+
+/**
+ * Create test tickets for demo purposes
+ * Creates sample tickets with various priorities and categories
+ */
+dashboardResolver.define('createTestTickets', async (req) => {
+  const projectKey = req.context.extension.project.key;
+  
+  // Test ticket templates
+  const testTickets = [
+    {
+      summary: 'Cannot connect to VPN from home',
+      description: 'I\'m trying to connect to the company VPN from my home office, but I keep getting an "Authentication failed" error. This is urgent as I need to access internal systems.'
+    },
+    {
+      summary: 'Office printer not printing color documents',
+      description: 'The printer on the 3rd floor is only printing in black and white, even when I select color printing in the settings.'
+    },
+    {
+      summary: 'Need to reset my email password',
+      description: 'I forgot my email password and can\'t log in to Outlook. I\'ve tried the self-service password reset, but I\'m not receiving the verification code.'
+    }
+  ];
+  
+  try {
+    const createdTickets = [];
+    
+    for (const ticket of testTickets) {
+      // Create issue with minimal required fields
+      // Priority is optional and will use project default
+      const response = await JiraClient.createIssue({
+        fields: {
+          project: { key: projectKey },
+          summary: ticket.summary,
+          description: ticket.description,
+          issuetype: { name: 'Task' }
+        }
+      });
+      
+      if (response.ok && response.data) {
+        createdTickets.push(response.data.key);
+      } else {
+        console.error('Failed to create ticket:', response.error);
+      }
+    }
+    
+    return {
+      success: true,
+      count: createdTickets.length,
+      tickets: createdTickets
+    };
+  } catch (error) {
+    console.error('Error creating test tickets:', error);
+    throw new Error(`Failed to create test tickets: ${error instanceof Error ? error.message : 'Unknown error'}`);
+  }
 });
 
 /**
