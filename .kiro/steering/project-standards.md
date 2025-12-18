@@ -285,11 +285,20 @@ git push origin feat/task-1.1-setup-hono-app
 
 Agents must follow these rules:
 
-1. **Do not chain `git push` with `&&` to other commands**
+1. **Only push feature, fix, test, or refactor branches**
+   - ✅ Allowed: `git push origin feat/feature-name`
+   - ✅ Allowed: `git push origin fix/issue-123-description`
+   - ✅ Allowed: `git push origin test/test-description`
+   - ✅ Allowed: `git push origin refactor/refactor-description`
+   - ❌ Prohibited: `git push origin main` (direct push to main)
+   - ❌ Prohibited: `git push origin *` (wildcard push)
+   - Main branch should only be updated via PR merge
+
+2. **Do not chain `git push` with `&&` to other commands**
    - ❌ Bad example: `git commit ... && git push origin main`
    - ✅ Good example: Execute separately and request user approval
 
-2. **Always execute `git push` independently**
+3. **Always execute `git push` independently**
    ```bash
    # Step 1: Build
    npm run build
@@ -297,14 +306,21 @@ Agents must follow these rules:
    # Step 2: Commit
    git add ... && git commit -m "..."
    
-   # Step 3: Push (requires user approval)
-   git push origin main
+   # Step 3: Push (requires user approval, only allowed branch patterns)
+   git push origin feat/feature-name
+   # or
+   git push origin fix/issue-123-description
+   # or
+   git push origin test/test-description
+   # or
+   git push origin refactor/refactor-description
    ```
 
-3. **Reason**
+4. **Reason**
    - Chaining with `&&` may result in automatic approval
    - Prevents unintended pushes by user
    - Ensures final confirmation before deployment
+   - Protects main branch from direct pushes
 
 **4. Review & Merge**
 - Create Pull Request on GitHub
