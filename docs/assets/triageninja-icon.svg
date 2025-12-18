@@ -1,0 +1,31 @@
+<svg width="256" height="256" viewBox="0 0 256 256" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <!-- Background -->
+  <rect width="256" height="256" rx="32" fill="#0052CC"/>
+  
+  <!-- Ninja Head Shape -->
+  <circle cx="128" cy="110" r="65" fill="#172B4D"/>
+  
+  <!-- Ninja Headband -->
+  <rect x="63" y="70" width="130" height="16" rx="2" fill="#FF5630"/>
+  <circle cx="128" cy="78" r="8" fill="#FFD700"/>
+  
+  <!-- Ninja Eyes (focused/determined look) -->
+  <ellipse cx="105" cy="105" rx="16" ry="20" fill="white"/>
+  <ellipse cx="151" cy="105" rx="16" ry="20" fill="white"/>
+  <ellipse cx="105" cy="105" rx="8" ry="12" fill="#0052CC"/>
+  <ellipse cx="151" cy="105" rx="8" ry="12" fill="#0052CC"/>
+  
+  <!-- Ninja Mask Lower Part -->
+  <path d="M 75 130 Q 75 145 90 145 L 166 145 Q 181 145 181 130 L 181 110 L 75 110 Z" fill="#172B4D"/>
+  
+  <!-- Ticket/Document with Triage Checkmark -->
+  <rect x="78" y="165" width="100" height="65" rx="6" fill="white"/>
+  <line x1="90" y1="180" x2="130" y2="180" stroke="#DFE1E6" stroke-width="3" stroke-linecap="round"/>
+  <line x1="90" y1="195" x2="120" y2="195" stroke="#DFE1E6" stroke-width="3" stroke-linecap="round"/>
+  
+  <!-- Large Checkmark (Triage Complete) -->
+  <path d="M 145 175 L 158 192 L 185 165" stroke="#36B37E" stroke-width="10" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
+  
+  <!-- Subtle Shadow/Depth -->
+  <ellipse cx="128" cy="230" rx="50" ry="8" fill="#000000" opacity="0.1"/>
+</svg>
