@@ -1,0 +1,48 @@
+/* Hover effects */
+.stat-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 8px rgba(9,30,66,0.25) !important;
+}
+
+.ticket-row:hover {
+  background-color: rgba(9, 30, 66, 0.08) !important;
+}
+
+/* Dark mode support */
+@media (prefers-color-scheme: dark) {
+  .ticket-row:hover {
+    background-color: rgba(255, 255, 255, 0.08) !important;
+  }
+}
+
+.triage-button:hover {
+  background-color: #0747A6 !important;
+}
+
+.run-triage-button:hover {
+  background-color: #0747A6 !important;
+}
+
+.approve-button:hover {
+  background-color: #0747A6 !important;
+}
+
+.reject-button:hover {
+  background-color: #C1C7D0 !important;
+}
+
+/* Animations */
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
+@keyframes spin-twice {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(720deg); }
+}
+
+@keyframes pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.5; }
+}

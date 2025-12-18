@@ -19,6 +19,7 @@ export const translations = {
     aiAccuracy: 'AI Accuracy',
     
     // Filters
+    assignee: 'Assignee',
     priority: 'Priority',
     period: 'Period',
     all: 'All',
@@ -27,11 +28,20 @@ export const translations = {
     month: 'Past 30 days',
     ticketsCount: 'tickets',
     
-    // Untriaged Tickets
+    // Tickets
+    tickets: 'Tickets',
     untriagedTickets: 'Untriaged Tickets',
+    allTickets: 'All Tickets',
     allTriaged: 'All tickets have been triaged 🎉',
     noMatchingTickets: 'No tickets match the filter criteria',
     triageButton: 'Triage',
+    unassigned: 'Unassigned',
+    
+    // Table Headers
+    key: 'Key',
+    summary: 'Summary',
+    status: 'Status',
+    created: 'Created',
     
     // Time formatting
     minutesAgo: 'min ago',
@@ -39,7 +49,17 @@ export const translations = {
     daysAgo: 'd ago',
     
     // Loading
-    loading: 'Loading dashboard...'
+    loading: 'Loading dashboard...',
+    loadingTickets: 'Loading tickets...',
+    
+    // Triage Modal
+    aiTriage: 'AI Triage',
+    analyzingTicket: 'Analyzing ticket...',
+    category: 'Category',
+    suggestedAssignee: 'Suggested Assignee',
+    confidence: 'Confidence',
+    applyTriage: 'Apply Triage',
+    cancel: 'Cancel'
   },
   ja: {
     // Header
@@ -56,6 +76,7 @@ export const translations = {
     aiAccuracy: 'AI精度',
     
     // Filters
+    assignee: '担当者',
     priority: '優先度',
     period: '期間',
     all: 'すべて',
@@ -64,11 +85,20 @@ export const translations = {
     month: '過去30日間',
     ticketsCount: '件のチケット',
     
-    // Untriaged Tickets
+    // Tickets
+    tickets: 'チケット',
     untriagedTickets: '未トリアージチケット',
+    allTickets: 'すべてのチケット',
     allTriaged: 'すべてのチケットがトリアージ済みです 🎉',
     noMatchingTickets: 'フィルター条件に一致するチケットがありません',
     triageButton: 'Triage',
+    unassigned: '未割り当て',
+    
+    // Table Headers
+    key: 'キー',
+    summary: '概要',
+    status: 'ステータス',
+    created: '作成日',
     
     // Time formatting
     minutesAgo: '分前',
@@ -76,7 +106,17 @@ export const translations = {
     daysAgo: '日前',
     
     // Loading
-    loading: 'ダッシュボードを読み込み中...'
+    loading: 'ダッシュボードを読み込み中...',
+    loadingTickets: 'チケットを読み込み中...',
+    
+    // Triage Modal
+    aiTriage: 'AIトリアージ',
+    analyzingTicket: 'チケットを分析中...',
+    category: 'カテゴリ',
+    suggestedAssignee: '推奨担当者',
+    confidence: '信頼度',
+    applyTriage: 'トリアージを適用',
+    cancel: 'キャンセル'
   }
 };
 
