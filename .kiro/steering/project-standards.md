@@ -290,9 +290,9 @@ Agents must follow these rules:
    - ✅ Allowed: `git push origin fix/issue-123-description`
    - ✅ Allowed: `git push origin test/test-description`
    - ✅ Allowed: `git push origin refactor/refactor-description`
-   - ❌ Prohibited: `git push origin main` (direct push to main)
+   - ❌ **PROHIBITED: `git push origin main`** (direct push to main is completely blocked)
    - ❌ Prohibited: `git push origin *` (wildcard push)
-   - Main branch should only be updated via PR merge
+   - **Main branch can ONLY be updated via PR merge on GitHub**
 
 2. **Do not chain `git push` with `&&` to other commands**
    - ❌ Bad example: `git commit ... && git push origin main`
@@ -316,7 +316,12 @@ Agents must follow these rules:
    git push origin refactor/refactor-description
    ```
 
-4. **Reason**
+4. **NEVER attempt to push to main branch**
+   - Pre-push hook will block any attempt to push to main
+   - All changes to main must go through Pull Request workflow
+   - This ensures code review and CI/CD checks are always performed
+
+5. **Reason**
    - Chaining with `&&` may result in automatic approval
    - Prevents unintended pushes by user
    - Ensures final confirmation before deployment
