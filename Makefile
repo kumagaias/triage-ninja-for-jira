@@ -76,6 +76,9 @@ clean: ## Clean build artifacts
 	@rm -rf .forge
 	@echo "$(GREEN)✓ Clean complete$(NC)"
 
+dev-flow: ## Start automated development flow (branch → dev → push → PR → review)
+	@./scripts/auto-dev-flow.sh
+
 # Future: Log display commands
 # logs: ## Display CloudWatch Logs
 # logs-frontend: ## Frontend logs
