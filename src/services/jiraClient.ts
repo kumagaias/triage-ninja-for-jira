@@ -104,7 +104,8 @@ export class JiraClient {
     searchRequest: JiraSearchRequest
   ): Promise<ApiResponse<JiraSearchResult>> {
     try {
-      const response = await api.asUser().requestJira(route`/rest/api/3/search`, {
+      // Use the new /rest/api/3/search/jql endpoint (replaces deprecated /rest/api/3/search)
+      const response = await api.asUser().requestJira(route`/rest/api/3/search/jql`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

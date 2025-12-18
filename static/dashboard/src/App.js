@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
-import { invoke, view } from '@forge/bridge';
+import { invoke, view, router } from '@forge/bridge';
 import { getTranslations } from './i18n';
+import './App.css';
 
 // Priority color mapping - moved outside component to avoid recreation on each render
 const PRIORITY_COLORS = {
@@ -11,41 +12,6 @@ const PRIORITY_COLORS = {
   Lowest: '#00B8D9'
 };
 
-// Add CSS for hover effects
-const styles = `
-  .stat-card:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 4px 8px rgba(9,30,66,0.25) !important;
-  }
-  
-  .ticket-row:hover {
-    background-color: #F4F5F7 !important;
-  }
-  
-  .triage-button:hover {
-    background-color: #0747A6 !important;
-  }
-  
-  .run-triage-button:hover {
-    background-color: #0747A6 !important;
-  }
-  
-  .approve-button:hover {
-    background-color: #0747A6 !important;
-  }
-  
-  .reject-button:hover {
-    background-color: #C1C7D0 !important;
-  }
-`;
-
-// Inject styles into document
-if (typeof document !== 'undefined') {
-  const styleSheet = document.createElement('style');
-  styleSheet.textContent = styles;
-  document.head.appendChild(styleSheet);
-}
-
 /**
  * TriageNinja Dashboard Component
  * Displays triage statistics and untriaged tickets
@@ -54,11 +20,20 @@ function App() {
   const [statistics, setStatistics] = useState(null);
   const [tickets, setTickets] = useState([]);
   const [filteredTickets, setFilteredTickets] = useState([]);
-  const [loading, setLoading] = useState(true);
+  const [loadingStats, setLoadingStats] = useState(true);
+  const [loadingTickets, setLoadingTickets] = useState(true);
   const [locale, setLocale] = useState('en');
   const [filters, setFilters] = useState({
+    assignee: 'untriaged', // New filter: 'all' or 'untriaged'
     priority: 'all',
     dateRange: 'all'
+  });
+  const [triageModal, setTriageModal] = useState({
+    isOpen: false,
+    ticket: null,
+    loading: false,
+    result: null,
+    error: null
   });
   
   const t = getTranslations(locale);
@@ -78,31 +53,50 @@ function App() {
     getUserLocale();
   }, []);
 
-  // Fetch data on mount and set up auto-refresh
+  // Fetch statistics on mount
   useEffect(() => {
-    const fetchData = async () => {
+    const fetchStats = async () => {
       try {
-        const [stats, ticketList] = await Promise.all([
-          invoke('getStatistics'),
-          invoke('getUntriagedTickets')
-        ]);
+        setLoadingStats(true);
+        const stats = await invoke('getStatistics');
         setStatistics(stats);
-        setTickets(ticketList);
-        setFilteredTickets(ticketList);
       } catch (err) {
-        console.error('Failed to fetch dashboard data:', err);
+        console.error('Failed to fetch statistics:', err);
       } finally {
-        setLoading(false);
+        setLoadingStats(false);
       }
     };
     
-    fetchData();
+    fetchStats();
     
-    // Auto-refresh every 30 seconds for real-time updates
-    const intervalId = setInterval(fetchData, 30000);
+    // Auto-refresh statistics every 30 seconds
+    const intervalId = setInterval(fetchStats, 30000);
     
     return () => clearInterval(intervalId);
   }, []);
+
+  // Fetch tickets when assignee filter changes
+  useEffect(() => {
+    const fetchTickets = async () => {
+      try {
+        setLoadingTickets(true);
+        const ticketList = await invoke('getTickets', { filter: filters.assignee });
+        setTickets(ticketList);
+        setFilteredTickets(ticketList);
+      } catch (err) {
+        console.error('Failed to fetch tickets:', err);
+      } finally {
+        setLoadingTickets(false);
+      }
+    };
+    
+    fetchTickets();
+    
+    // Auto-refresh tickets every 30 seconds
+    const intervalId = setInterval(fetchTickets, 30000);
+    
+    return () => clearInterval(intervalId);
+  }, [filters.assignee]);
 
   // Apply filters when tickets or filter settings change
   useEffect(() => {
@@ -141,14 +135,6 @@ function App() {
     
     setFilteredTickets(filtered);
   }, [tickets, filters]);
-
-  if (loading) {
-    return (
-      <div style={{ padding: '40px', textAlign: 'center' }}>
-        <div>{t.loading}</div>
-      </div>
-    );
-  }
 
   // Detect dark mode from Jira theme
   const isDarkMode = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
@@ -229,30 +215,41 @@ function App() {
         gap: '15px',
         marginBottom: '30px'
       }}>
-        <StatCard
-          title={t.untriaged}
-          value={statistics.untriagedCount}
-          color="#FF5630"
-          theme={theme}
-        />
-        <StatCard
-          title={t.todayProcessed}
-          value={statistics.todayProcessed}
-          color="#36B37E"
-          theme={theme}
-        />
-        <StatCard
-          title={t.timeSaved}
-          value={`${statistics.timeSaved}%`}
-          color="#0052CC"
-          theme={theme}
-        />
-        <StatCard
-          title={t.aiAccuracy}
-          value={`${statistics.aiAccuracy}%`}
-          color="#6554C0"
-          theme={theme}
-        />
+        {loadingStats ? (
+          <>
+            <LoadingCard theme={theme} color="#FF5630" />
+            <LoadingCard theme={theme} color="#36B37E" />
+            <LoadingCard theme={theme} color="#0052CC" />
+            <LoadingCard theme={theme} color="#6554C0" />
+          </>
+        ) : (
+          <>
+            <StatCard
+              title={t.untriaged}
+              value={statistics.untriagedCount}
+              color="#FF5630"
+              theme={theme}
+            />
+            <StatCard
+              title={t.todayProcessed}
+              value={statistics.todayProcessed}
+              color="#36B37E"
+              theme={theme}
+            />
+            <StatCard
+              title={t.timeSaved}
+              value={`${statistics.timeSaved}%`}
+              color="#0052CC"
+              theme={theme}
+            />
+            <StatCard
+              title={t.aiAccuracy}
+              value={`${statistics.aiAccuracy}%`}
+              color="#6554C0"
+              theme={theme}
+            />
+          </>
+        )}
       </div>
 
       {/* Filters - Task 4.3 */}
@@ -267,6 +264,31 @@ function App() {
         flexWrap: 'wrap',
         alignItems: 'center'
       }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+          <label 
+            htmlFor="assignee-filter"
+            style={{ fontSize: '14px', color: theme.textSecondary, fontWeight: 'bold' }}>
+            {t.assignee || 'Assignee'}:
+          </label>
+          <select
+            id="assignee-filter"
+            value={filters.assignee}
+            onChange={(e) => setFilters({ ...filters, assignee: e.target.value })}
+            style={{
+              padding: '6px 10px',
+              borderRadius: '3px',
+              border: `1px solid ${theme.border}`,
+              fontSize: '14px',
+              cursor: 'pointer',
+              backgroundColor: theme.cardBackground,
+              color: theme.textPrimary
+            }}
+          >
+            <option value="untriaged">{t.untriaged || 'Untriaged'}</option>
+            <option value="all">{t.all}</option>
+          </select>
+        </div>
+        
         <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
           <label 
             htmlFor="priority-filter"
@@ -328,17 +350,54 @@ function App() {
         </div>
       </div>
 
-      {/* Untriaged Tickets - Task 4.2 */}
+      {/* Tickets List - Task 4.2 */}
       <div style={{
         backgroundColor: theme.cardBackground,
         borderRadius: '3px',
         padding: '20px',
         boxShadow: '0 1px 1px rgba(9,30,66,0.25)'
       }}>
-        <h2 style={{ marginTop: 0, fontSize: '18px', color: theme.textPrimary, marginBottom: '15px' }}>
-          {t.untriagedTickets}
-        </h2>
-        {filteredTickets.length === 0 ? (
+        <div style={{ 
+          display: 'flex', 
+          alignItems: 'center', 
+          justifyContent: 'space-between',
+          marginBottom: '15px'
+        }}>
+          <h2 style={{ margin: 0, fontSize: '18px', color: theme.textPrimary }}>
+            {t.tickets || 'Tickets'}
+          </h2>
+          <RefreshButton 
+            onRefresh={async () => {
+              setLoadingTickets(true);
+              try {
+                const ticketList = await invoke('getTickets', { filter: filters.assignee });
+                setTickets(ticketList);
+                setFilteredTickets(ticketList);
+              } catch (err) {
+                console.error('Failed to refresh tickets:', err);
+              } finally {
+                setLoadingTickets(false);
+              }
+            }}
+            theme={theme}
+          />
+        </div>
+        {loadingTickets ? (
+          <div style={{ textAlign: 'center', padding: '40px' }}>
+            <div style={{ 
+              display: 'inline-block',
+              width: '40px',
+              height: '40px',
+              border: `4px solid ${theme.border}`,
+              borderTop: '4px solid #0052CC',
+              borderRadius: '50%',
+              animation: 'spin 1s linear infinite'
+            }} />
+            <p style={{ color: theme.textSecondary, marginTop: '15px' }}>
+              {t.loadingTickets || 'Loading tickets...'}
+            </p>
+          </div>
+        ) : filteredTickets.length === 0 ? (
           <p style={{ color: theme.textSecondary, textAlign: 'center', padding: '20px' }}>
             {tickets.length === 0 
               ? t.allTriaged
@@ -346,12 +405,78 @@ function App() {
           </p>
         ) : (
           <div style={{ overflowX: 'auto' }}>
+            {/* Table Header */}
+            <div style={{
+              display: 'flex',
+              alignItems: 'center',
+              padding: '12px 8px',
+              borderBottom: `2px solid ${theme.border}`,
+              gap: '10px',
+              fontWeight: 'bold',
+              fontSize: '12px',
+              color: theme.textSecondary,
+              backgroundColor: theme.background
+            }}>
+              <div style={{ flex: '0 0 auto', minWidth: '90px' }}>
+                {t.key || 'Key'}
+              </div>
+              <div style={{ flex: '1 1 auto' }}>
+                {t.summary || 'Summary'}
+              </div>
+              <div style={{ flex: '0 0 120px' }}>
+                {t.assignee || 'Assignee'}
+              </div>
+              <div style={{ flex: '0 0 100px' }}>
+                {t.status || 'Status'}
+              </div>
+              <div style={{ flex: '0 0 90px' }}>
+                {t.created || 'Created'}
+              </div>
+              <div style={{ flex: '0 0 auto', minWidth: '70px', textAlign: 'center' }}>
+                {t.priority}
+              </div>
+              <div style={{ flex: '0 0 auto', minWidth: '80px' }}>
+                {/* Triage button column */}
+              </div>
+            </div>
+            
+            {/* Ticket Rows */}
             {filteredTickets.slice(0, 20).map((ticket) => (
-              <TicketRow key={ticket.key} ticket={ticket} t={t} theme={theme} />
+              <TicketRow 
+                key={ticket.key} 
+                ticket={ticket} 
+                t={t} 
+                theme={theme}
+                onTriageClick={() => setTriageModal({ isOpen: true, ticket, loading: false, result: null, error: null })}
+              />
             ))}
           </div>
         )}
       </div>
+
+      {/* Triage Modal */}
+      {triageModal.isOpen && (
+        <TriageModal
+          ticket={triageModal.ticket}
+          onClose={() => setTriageModal({ isOpen: false, ticket: null, loading: false, result: null, error: null })}
+          onSuccess={() => {
+            setTriageModal({ isOpen: false, ticket: null, loading: false, result: null, error: null });
+            // Refresh tickets
+            const fetchTickets = async () => {
+              try {
+                const ticketList = await invoke('getTickets', { filter: filters.assignee });
+                setTickets(ticketList);
+                setFilteredTickets(ticketList);
+              } catch (err) {
+                console.error('Failed to refresh tickets:', err);
+              }
+            };
+            fetchTickets();
+          }}
+          theme={theme}
+          t={t}
+        />
+      )}
 
       {/* Version Footer */}
       <div style={{
@@ -360,9 +485,284 @@ function App() {
         fontSize: '12px',
         color: theme.textSecondary
       }}>
-        TriageNinja v5.4.0 (Production)
+        TriageNinja v5.28.0 (Production)
       </div>
     </div>
+  );
+}
+
+/**
+ * Triage Modal Component
+ * Displays AI triage results and allows applying them
+ */
+function TriageModal({ ticket, onClose, onSuccess, theme, t }) {
+  const [loading, setLoading] = useState(false);
+  const [result, setResult] = useState(null);
+  const [error, setError] = useState(null);
+  const [assignableUsers, setAssignableUsers] = useState([]);
+
+  useEffect(() => {
+    const runTriage = async () => {
+      setLoading(true);
+      setError(null);
+      
+      try {
+        // Run AI triage
+        const triageResult = await invoke('runAITriage', {
+          issueKey: ticket.key,
+          summary: ticket.fields.summary,
+          description: ticket.fields.description || '',
+          reporter: ticket.fields.reporter?.displayName || '',
+          created: ticket.fields.created
+        });
+        
+        setResult(triageResult);
+      } catch (err) {
+        console.error('Failed to run AI triage:', err);
+        setError(err.message || 'Failed to run AI triage');
+      } finally {
+        setLoading(false);
+      }
+    };
+    
+    runTriage();
+  }, [ticket]);
+
+  const handleApply = async () => {
+    if (!result) return;
+    
+    setLoading(true);
+    try {
+      await invoke('applyTriageResult', {
+        issueKey: ticket.key,
+        priority: result.priority,
+        assigneeId: result.suggestedAssignee?.id,
+        category: result.category,
+        subCategory: result.subCategory
+      });
+      
+      onSuccess();
+    } catch (err) {
+      console.error('Failed to apply triage:', err);
+      setError(err.message || 'Failed to apply triage');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  return (
+    <div style={{
+      position: 'fixed',
+      top: 0,
+      left: 0,
+      right: 0,
+      bottom: 0,
+      backgroundColor: 'rgba(0, 0, 0, 0.5)',
+      display: 'flex',
+      alignItems: 'center',
+      justifyContent: 'center',
+      zIndex: 1000
+    }}>
+      <div style={{
+        backgroundColor: theme.cardBackground,
+        borderRadius: '8px',
+        padding: '24px',
+        maxWidth: '600px',
+        width: '90%',
+        maxHeight: '80vh',
+        overflow: 'auto',
+        boxShadow: '0 8px 16px rgba(0,0,0,0.3)'
+      }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
+          <h2 style={{ margin: 0, color: theme.textPrimary }}>
+            {t.aiTriage || 'AI Triage'}: {ticket.key}
+          </h2>
+          <button
+            onClick={onClose}
+            style={{
+              background: 'none',
+              border: 'none',
+              fontSize: '24px',
+              cursor: 'pointer',
+              color: theme.textSecondary
+            }}
+          >
+            ×
+          </button>
+        </div>
+
+        {loading && (
+          <div style={{ textAlign: 'center', padding: '40px' }}>
+            <div style={{ 
+              display: 'inline-block',
+              width: '40px',
+              height: '40px',
+              border: `4px solid ${theme.border}`,
+              borderTop: '4px solid #0052CC',
+              borderRadius: '50%',
+              animation: 'spin 1s linear infinite'
+            }} />
+            <p style={{ color: theme.textSecondary, marginTop: '15px' }}>
+              {t.analyzingTicket || 'Analyzing ticket...'}
+            </p>
+          </div>
+        )}
+
+        {error && (
+          <div style={{
+            padding: '12px',
+            backgroundColor: '#FFEBE6',
+            border: '1px solid #FF5630',
+            borderRadius: '3px',
+            color: '#BF2600',
+            marginBottom: '16px'
+          }}>
+            {error}
+          </div>
+        )}
+
+        {result && !loading && (
+          <div>
+            <div style={{ marginBottom: '16px' }}>
+              <strong style={{ color: theme.textPrimary }}>{t.category || 'Category'}:</strong>
+              <span style={{ marginLeft: '8px', color: theme.textSecondary }}>
+                {result.category} / {result.subCategory}
+              </span>
+            </div>
+
+            <div style={{ marginBottom: '16px' }}>
+              <strong style={{ color: theme.textPrimary }}>{t.priority}:</strong>
+              <span style={{ 
+                marginLeft: '8px',
+                padding: '4px 8px',
+                borderRadius: '3px',
+                backgroundColor: PRIORITY_COLORS[result.priority] || '#5E6C84',
+                color: 'white',
+                fontSize: '12px',
+                fontWeight: 'bold'
+              }}>
+                {result.priority}
+              </span>
+            </div>
+
+            <div style={{ marginBottom: '16px' }}>
+              <strong style={{ color: theme.textPrimary }}>{t.suggestedAssignee || 'Suggested Assignee'}:</strong>
+              <div style={{ marginTop: '8px', padding: '12px', backgroundColor: theme.background, borderRadius: '3px' }}>
+                <div style={{ color: theme.textPrimary, fontWeight: 'bold' }}>
+                  {result.suggestedAssignee?.name || 'None'}
+                </div>
+                <div style={{ color: theme.textSecondary, fontSize: '12px', marginTop: '4px' }}>
+                  {result.suggestedAssignee?.reason}
+                </div>
+              </div>
+            </div>
+
+            <div style={{ marginBottom: '16px' }}>
+              <strong style={{ color: theme.textPrimary }}>{t.confidence || 'Confidence'}:</strong>
+              <span style={{ marginLeft: '8px', color: theme.textSecondary }}>
+                {result.confidence}%
+              </span>
+            </div>
+
+            <div style={{ display: 'flex', gap: '12px', marginTop: '24px' }}>
+              <button
+                onClick={handleApply}
+                disabled={loading}
+                style={{
+                  flex: 1,
+                  padding: '10px 16px',
+                  backgroundColor: '#0052CC',
+                  color: 'white',
+                  border: 'none',
+                  borderRadius: '3px',
+                  fontSize: '14px',
+                  cursor: loading ? 'not-allowed' : 'pointer',
+                  fontWeight: '500'
+                }}
+              >
+                {t.applyTriage || 'Apply Triage'}
+              </button>
+              <button
+                onClick={onClose}
+                style={{
+                  flex: 1,
+                  padding: '10px 16px',
+                  backgroundColor: theme.border,
+                  color: theme.textPrimary,
+                  border: 'none',
+                  borderRadius: '3px',
+                  fontSize: '14px',
+                  cursor: 'pointer',
+                  fontWeight: '500'
+                }}
+              >
+                {t.cancel || 'Cancel'}
+              </button>
+            </div>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
+/**
+ * Refresh Button Component
+ * Displays a shuriken icon that spins twice when clicked
+ */
+function RefreshButton({ onRefresh, theme }) {
+  const [spinning, setSpinning] = useState(false);
+
+  const handleClick = async () => {
+    if (spinning) return; // Prevent multiple clicks
+    
+    setSpinning(true);
+    await onRefresh();
+    
+    // Keep spinning for 1 second (2 rotations at 0.5s each)
+    setTimeout(() => {
+      setSpinning(false);
+    }, 1000);
+  };
+
+  return (
+    <button
+      onClick={handleClick}
+      disabled={spinning}
+      style={{
+        background: 'none',
+        border: 'none',
+        cursor: spinning ? 'not-allowed' : 'pointer',
+        padding: '4px',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        opacity: spinning ? 0.6 : 1,
+        transition: 'opacity 0.2s'
+      }}
+      aria-label="Refresh tickets"
+      title="Refresh tickets"
+    >
+      <svg 
+        width="24" 
+        height="24" 
+        viewBox="0 0 24 24" 
+        fill="none" 
+        xmlns="http://www.w3.org/2000/svg"
+        style={{
+          animation: spinning ? 'spin-twice 1s linear' : 'none'
+        }}
+      >
+        <path 
+          d="M12 2L14.5 9.5L22 12L14.5 14.5L12 22L9.5 14.5L2 12L9.5 9.5L12 2Z" 
+          fill="#0052CC" 
+          stroke="#0052CC" 
+          strokeWidth="1" 
+          strokeLinejoin="round"
+        />
+        <circle cx="12" cy="12" r="2" fill="white"/>
+      </svg>
+    </button>
   );
 }
 
@@ -429,6 +829,40 @@ function TestTicketButton({ t, onTicketsCreated }) {
 }
 
 /**
+ * Loading Card Component
+ * Displays a skeleton loader for statistics cards
+ */
+function LoadingCard({ theme, color }) {
+  return (
+    <div 
+      style={{
+        backgroundColor: theme.cardBackground,
+        borderRadius: '3px',
+        padding: '15px',
+        boxShadow: '0 1px 1px rgba(9,30,66,0.25)',
+        borderTop: `3px solid ${color}`,
+        minWidth: '150px'
+      }}>
+      <div style={{ 
+        height: '14px', 
+        width: '60%', 
+        backgroundColor: theme.border,
+        borderRadius: '3px',
+        marginBottom: '8px',
+        animation: 'pulse 1.5s ease-in-out infinite'
+      }} />
+      <div style={{ 
+        height: '32px', 
+        width: '40%', 
+        backgroundColor: theme.border,
+        borderRadius: '3px',
+        animation: 'pulse 1.5s ease-in-out infinite'
+      }} />
+    </div>
+  );
+}
+
+/**
  * Statistics Card Component
  * Task 4.1: Real-time updating statistics cards
  * Task 4.4: Responsive design
@@ -465,12 +899,14 @@ function StatCard({ title, value, color, theme }) {
  * Task 4.2: Display ticket information with triage button
  * Task 4.4: Responsive design for mobile/tablet
  */
-function TicketRow({ ticket, t, theme }) {
-  const handleTriageClick = () => {
-    // Open the issue in a new tab
-    // Note: In Forge apps, we can use the issue key to construct the URL
-    // The actual Jira URL will be available in the context
-    window.open(`/browse/${ticket.key}`, '_blank', 'noopener,noreferrer');
+function TicketRow({ ticket, t, theme, onTriageClick }) {
+  const handleViewClick = async () => {
+    // Navigate to the issue using Forge router API
+    try {
+      await router.navigate(`/browse/${ticket.key}`);
+    } catch (error) {
+      console.error('Failed to navigate to issue:', error);
+    }
   };
 
   // Format date for display
@@ -497,36 +933,68 @@ function TicketRow({ ticket, t, theme }) {
         padding: '12px 8px',
         borderBottom: `1px solid ${theme.border}`,
         gap: '10px',
-        flexWrap: 'wrap',
-        transition: 'background-color 0.2s'
+        transition: 'background-color 0.2s',
+        overflow: 'hidden'
       }}>
-      {/* Ticket Key */}
-      <div style={{ 
-        flex: '0 0 auto',
-        minWidth: '90px',
-        fontWeight: 'bold', 
-        color: '#0052CC',
-        fontSize: '14px'
-      }}>
+      {/* Ticket Key - Clickable */}
+      <div 
+        onClick={handleViewClick}
+        style={{ 
+          flex: '0 0 auto',
+          minWidth: '90px',
+          fontWeight: 'bold', 
+          color: '#0052CC',
+          fontSize: '14px',
+          cursor: 'pointer'
+        }}>
         {ticket.key}
       </div>
       
-      {/* Summary */}
-      <div style={{ 
-        flex: '1 1 300px',
-        color: theme.textPrimary,
-        fontSize: '14px',
-        minWidth: '200px'
-      }}>
+      {/* Summary - Clickable */}
+      <div 
+        onClick={handleViewClick}
+        style={{ 
+          flex: '1 1 auto',
+          color: theme.textPrimary,
+          fontSize: '14px',
+          cursor: 'pointer',
+          overflow: 'hidden',
+          textOverflow: 'ellipsis',
+          whiteSpace: 'nowrap'
+        }}>
         {ticket.fields.summary}
+      </div>
+      
+      {/* Assignee */}
+      <div style={{
+        flex: '0 0 120px',
+        fontSize: '12px',
+        color: theme.textSecondary,
+        overflow: 'hidden',
+        textOverflow: 'ellipsis',
+        whiteSpace: 'nowrap'
+      }}>
+        {ticket.fields.assignee?.displayName || t.unassigned || 'Unassigned'}
+      </div>
+      
+      {/* Status */}
+      <div style={{
+        flex: '0 0 100px',
+        fontSize: '12px',
+        color: theme.textSecondary,
+        overflow: 'hidden',
+        textOverflow: 'ellipsis',
+        whiteSpace: 'nowrap'
+      }}>
+        {ticket.fields.status?.name || 'Unknown'}
       </div>
       
       {/* Created Date */}
       <div style={{
-        flex: '0 0 auto',
+        flex: '0 0 90px',
         fontSize: '12px',
         color: theme.textSecondary,
-        minWidth: '80px'
+        whiteSpace: 'nowrap'
       }}>
         {formatDate(ticket.fields.created)}
       </div>
@@ -548,7 +1016,10 @@ function TicketRow({ ticket, t, theme }) {
       
       {/* Triage Button */}
       <button
-        onClick={handleTriageClick}
+        onClick={(e) => {
+          e.stopPropagation();
+          onTriageClick();
+        }}
         className="triage-button"
         aria-label={`${t.triageButton} ${ticket.key}`}
         style={{

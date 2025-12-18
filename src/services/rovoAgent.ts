@@ -136,11 +136,10 @@ Respond in the following JSON format:
 }`;
 
   try {
-    // Note: Rovo Agent integration is not yet available in Forge
-    // This is a placeholder implementation that will be replaced when Rovo Agent API is available
-    // For now, we'll use a mock implementation based on keyword analysis
+    console.log('Classifying ticket using keyword-based classification');
     
-    console.log('Classifying ticket with mock AI (Rovo Agent not yet available)');
+    // Note: Rovo Agent API integration will be added in future version
+    // Currently using keyword-based classification
     
     // Simple keyword-based classification as fallback
     const summaryLower = String(input.summary || '').toLowerCase();
@@ -266,11 +265,13 @@ function escapeGraphQL(str: string): string {
  * Analyzes agent skills and workload to recommend optimal assignment
  */
 export async function suggestAssignee(input: SuggestAssigneeInput): Promise<SuggestAssigneeOutput> {
-  // Mock implementation until Rovo Agent API is available
   try {
-    console.log('Suggesting assignee with mock logic (Rovo Agent not yet available)');
+    console.log('Suggesting assignee using workload-based selection');
     
-    // Select assignee based on lowest workload
+    // Note: Rovo Agent API integration will be added in future version
+    // Currently using workload-based selection
+    
+    // Fallback if no agents available
     if (input.availableAgents.length === 0) {
       return {
         assignee: 'Unassigned',
@@ -282,7 +283,7 @@ export async function suggestAssignee(input: SuggestAssigneeInput): Promise<Sugg
       };
     }
     
-    // Sort by workload (ascending)
+    // Simple workload-based selection
     const sortedAgents = [...input.availableAgents].sort((a, b) => a.currentLoad - b.currentLoad);
     const bestAgent = sortedAgents[0];
     const alternatives = sortedAgents.slice(1, 3).map(agent => ({
@@ -295,17 +296,20 @@ export async function suggestAssignee(input: SuggestAssigneeInput): Promise<Sugg
       assignee: bestAgent.name,
       assigneeId: bestAgent.id,
       reason: `Selected based on lowest current workload (${bestAgent.currentLoad} tickets)`,
-      confidence: 70,
+      confidence: 60,
       estimatedTime: '2-4 hours',
       alternatives
     };
   } catch (error) {
     console.error('Error in suggestAssignee:', error);
+    
+    // Return first available agent as fallback
+    const firstAgent = input.availableAgents[0];
     return {
-      assignee: 'Unassigned',
-      assigneeId: '',
-      reason: 'AI analysis failed, manual assignment required',
-      confidence: 0,
+      assignee: firstAgent.name,
+      assigneeId: firstAgent.id,
+      reason: 'Error occurred, assigned to first available agent',
+      confidence: 30,
       estimatedTime: 'Unknown',
       alternatives: []
     };

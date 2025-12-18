@@ -12,23 +12,34 @@ const DEFAULT_MAX_RESULTS = 50;
 const dashboardResolver = new Resolver();
 
 /**
- * Fetch untriaged tickets for the dashboard
- * Returns a list of tickets that haven't been triaged yet (no assignee)
+ * Fetch tickets for the dashboard with optional filter
+ * Returns a list of tickets based on the filter parameter
+ * @param filter - 'all' (default) or 'untriaged' (no assignee)
  */
-dashboardResolver.define('getUntriagedTickets', async (req) => {
+dashboardResolver.define('getTickets', async (req) => {
   const projectKey = req.context.extension.project.key;
+  const payload = req.payload as { filter?: string };
+  const filter = payload?.filter || 'all';
   
-  // JQL query to find untriaged tickets (no assignee = not triaged)
-  const jql = `project = ${projectKey} AND assignee is EMPTY AND status = Open ORDER BY created DESC`;
+  // Build JQL query based on filter
+  let jql: string;
+  if (filter === 'untriaged') {
+    // Untriaged tickets: no assignee and not in Done status
+    // Using statusCategory for better compatibility across different Jira configurations
+    jql = `project = ${projectKey} AND assignee is EMPTY AND statusCategory != Done ORDER BY created DESC`;
+  } else {
+    // All tickets: all tickets not in Done status, regardless of assignee
+    jql = `project = ${projectKey} AND statusCategory != Done ORDER BY created DESC`;
+  }
   
   const response = await JiraClient.searchIssues({
     jql,
-    maxResults: 50,
-    fields: ['summary', 'priority', 'created', 'reporter', 'assignee']
+    maxResults: 100,
+    fields: ['summary', 'priority', 'created', 'reporter', 'assignee', 'status']
   });
   
   if (!response.ok || !response.data) {
-    console.error('Failed to fetch untriaged tickets:', response.error);
+    console.error('Failed to fetch tickets:', response.error);
     return [];
   }
   
@@ -43,11 +54,26 @@ dashboardResolver.define('getStatistics', async (req) => {
   const projectKey = req.context.extension.project.key;
   
   try {
-    // Get untriaged tickets count (no assignee)
+    // Get untriaged tickets count (no assignee and not in Done/Closed status)
+    // Using status category instead of specific status name for better compatibility
+    const untriagedJql = `project = ${projectKey} AND assignee is EMPTY AND statusCategory != Done`;
+    console.log('[getStatistics] Untriaged JQL:', untriagedJql);
+    
     const untriagedResponse = await JiraClient.searchIssues({
-      jql: `project = ${projectKey} AND assignee is EMPTY AND status = Open`,
-      maxResults: 0, // We only need the count
-      fields: []
+      jql: untriagedJql,
+      maxResults: 100, // Get up to 100 tickets to count
+      fields: ['key'] // Only need the key field
+    });
+    
+    const untriagedCount = untriagedResponse.ok && untriagedResponse.data?.issues 
+      ? untriagedResponse.data.issues.length 
+      : 0;
+    
+    console.log('[getStatistics] Untriaged response:', {
+      ok: untriagedResponse.ok,
+      count: untriagedCount,
+      issuesLength: untriagedResponse.data?.issues?.length,
+      error: untriagedResponse.error
     });
     
     // Get today's processed tickets (assigned today)
@@ -57,16 +83,23 @@ dashboardResolver.define('getStatistics', async (req) => {
     
     const todayProcessedResponse = await JiraClient.searchIssues({
       jql: `project = ${projectKey} AND assignee is not EMPTY AND updated >= "${todayStr}"`,
-      maxResults: 0,
-      fields: []
+      maxResults: 100, // Get up to 100 tickets to count
+      fields: ['key'] // Only need the key field
     });
     
-    return {
-      untriagedCount: untriagedResponse.ok ? untriagedResponse.data?.total || 0 : 0,
-      todayProcessed: todayProcessedResponse.ok ? todayProcessedResponse.data?.total || 0 : 0,
+    const todayProcessedCount = todayProcessedResponse.ok && todayProcessedResponse.data?.issues
+      ? todayProcessedResponse.data.issues.length
+      : 0;
+    
+    const result = {
+      untriagedCount,
+      todayProcessed: todayProcessedCount,
       timeSaved: 78, // Mock data - will be calculated based on historical data
       aiAccuracy: 94  // Mock data - will be calculated based on feedback
     };
+    
+    console.log('[getStatistics] Result:', result);
+    return result;
   } catch (error) {
     console.error('Failed to fetch statistics:', error);
     // Return zeros on error
@@ -174,6 +207,190 @@ dashboardResolver.define('searchTickets', async (req) => {
   }
   
   return response.data;
+});
+
+/**
+ * Trigger AI triage analysis (Dashboard)
+ * Uses Rovo Agent to classify ticket, suggest assignee, and find similar tickets
+ */
+dashboardResolver.define('runAITriage', async (req) => {
+  const payload = req.payload as { 
+    issueKey: string;
+    summary: string;
+    description: string;
+    reporter: string;
+    created: string;
+  };
+  
+  const { issueKey, summary, description, reporter, created } = payload;
+  
+  if (!issueKey || !summary) {
+    throw new Error('Missing required parameters: issueKey or summary');
+  }
+  
+  try {
+    // Step 1: Classify the ticket
+    const classification = await RovoAgent.classifyTicket({
+      summary,
+      description: description || '',
+      reporter: reporter || 'Unknown',
+      created: created || new Date().toISOString()
+    });
+    
+    // Step 2: Get assignable users for the project
+    if (!req.context || !req.context.extension || !req.context.extension.project || !req.context.extension.project.key) {
+      throw new Error('Project key is missing from request context. Cannot proceed with AI triage.');
+    }
+    const projectKey = req.context.extension.project.key;
+    const usersResponse = await JiraClient.getAssignableUsers(projectKey, 50);
+    
+    // Calculate current workload for each user
+    const availableAgents = [];
+    if (usersResponse.ok && usersResponse.data) {
+      for (const user of usersResponse.data) {
+        // Get current open tickets assigned to this user
+        const workloadResponse = await JiraClient.searchIssues({
+          jql: `project = ${projectKey} AND assignee = "${user.accountId}" AND statusCategory != Done`,
+          maxResults: 100,
+          fields: ['key']
+        });
+        
+        const currentLoad = workloadResponse.ok && workloadResponse.data?.issues 
+          ? workloadResponse.data.issues.length 
+          : 0;
+        
+        availableAgents.push({
+          name: user.displayName,
+          id: user.accountId,
+          skills: [],
+          currentLoad
+        });
+      }
+    }
+    
+    // Step 3 & 4: Run assignee suggestion and similar ticket search in parallel
+    const [assigneeSuggestion, similarAnalysis] = await Promise.all([
+      RovoAgent.suggestAssignee({
+        category: classification.category,
+        subCategory: classification.subCategory,
+        availableAgents,
+        historicalData: []
+      }),
+      (async () => {
+        const similarTicketsResponse = await JiraClient.searchIssues({
+          jql: `project = ${projectKey} AND status = Resolved ORDER BY created DESC`,
+          maxResults: 10,
+          fields: ['summary', 'description', 'resolution', 'resolutiondate', 'created']
+        });
+        
+        const pastTickets = similarTicketsResponse.ok && similarTicketsResponse.data ? 
+          similarTicketsResponse.data.issues.map(issue => ({
+            id: issue.key,
+            summary: issue.fields.summary,
+            description: issue.fields.description || '',
+            resolution: issue.fields.resolution?.name || 'Resolved',
+            resolutionTime: issue.fields.resolutiondate || issue.fields.created
+          })) : [];
+        
+        return RovoAgent.findSimilarTickets({
+          currentTicket: {
+            summary,
+            description: description || ''
+          },
+          pastTickets
+        });
+      })()
+    ]);
+    
+    return {
+      category: classification.category,
+      subCategory: classification.subCategory,
+      priority: classification.priority,
+      urgency: classification.urgency,
+      confidence: classification.confidence,
+      reasoning: classification.reasoning,
+      tags: classification.tags,
+      suggestedAssignee: {
+        name: assigneeSuggestion.assignee,
+        id: assigneeSuggestion.assigneeId,
+        reason: assigneeSuggestion.reason,
+        estimatedTime: assigneeSuggestion.estimatedTime,
+        confidence: assigneeSuggestion.confidence,
+        alternatives: assigneeSuggestion.alternatives
+      },
+      similarTickets: similarAnalysis.similarTickets,
+      suggestedActions: similarAnalysis.suggestedActions
+    };
+  } catch (error) {
+    console.error('Error in runAITriage:', error);
+    throw new Error('AI triage analysis failed. Please try again.');
+  }
+});
+
+/**
+ * Apply AI triage results to the issue (Dashboard)
+ * Updates priority, assignee, and labels based on AI analysis
+ */
+dashboardResolver.define('applyTriageResult', async (req) => {
+  const payload = req.payload as {
+    issueKey: string;
+    priority: string;
+    assigneeId: string;
+    category: string;
+    subCategory: string;
+  };
+  
+  const { issueKey, priority, assigneeId, category, subCategory } = payload;
+  
+  if (!issueKey) {
+    throw new Error('Missing required parameter: issueKey');
+  }
+  
+  try {
+    const updateFields: any = {};
+    
+    if (priority) {
+      const priorityMap: Record<string, string> = {
+        'High': '2',
+        'Medium': '3',
+        'Low': '4'
+      };
+      
+      if (priorityMap[priority]) {
+        updateFields.priority = { id: priorityMap[priority] };
+      }
+    }
+    
+    if (assigneeId) {
+      updateFields.assignee = { id: assigneeId };
+    }
+    
+    const labels: string[] = [];
+    if (category && category !== 'Uncategorized') {
+      labels.push(`ai-category:${category.toLowerCase().replace(/\s+/g, '-')}`);
+    }
+    if (subCategory && subCategory !== 'General') {
+      labels.push(`ai-subcategory:${subCategory.toLowerCase().replace(/\s+/g, '-')}`);
+    }
+    
+    if (labels.length > 0) {
+      updateFields.labels = labels;
+    }
+    
+    const updateResponse = await JiraClient.updateIssue(issueKey, updateFields);
+    
+    if (!updateResponse.ok) {
+      throw new Error('Failed to update issue');
+    }
+    
+    return {
+      success: true,
+      message: 'Triage result applied successfully'
+    };
+  } catch (error) {
+    console.error('Error in applyTriageResult:', error);
+    throw new Error('Failed to apply triage result. Please try again.');
+  }
 });
 
 export const dashboardHandler = dashboardResolver.getDefinitions();
@@ -326,12 +543,30 @@ issuePanelResolver.define('runAITriage', async (req) => {
     }
     const projectKey = req.context.extension.project.key;
     const usersResponse = await JiraClient.getAssignableUsers(projectKey, 50);
-    const availableAgents = usersResponse.ok && usersResponse.data ? usersResponse.data.map(user => ({
-      name: user.displayName,
-      id: user.accountId,
-      skills: [], // Will be populated from historical data in future
-      currentLoad: 0 // Will be calculated from current assignments in future
-    })) : [];
+    
+    // Calculate current workload for each user
+    const availableAgents = [];
+    if (usersResponse.ok && usersResponse.data) {
+      for (const user of usersResponse.data) {
+        // Get current open tickets assigned to this user
+        const workloadResponse = await JiraClient.searchIssues({
+          jql: `project = ${projectKey} AND assignee = "${user.accountId}" AND statusCategory != Done`,
+          maxResults: 100,
+          fields: ['key']
+        });
+        
+        const currentLoad = workloadResponse.ok && workloadResponse.data?.issues 
+          ? workloadResponse.data.issues.length 
+          : 0;
+        
+        availableAgents.push({
+          name: user.displayName,
+          id: user.accountId,
+          skills: [], // Will be populated from historical data in future
+          currentLoad
+        });
+      }
+    }
     
     // Step 3 & 4: Run assignee suggestion and similar ticket search in parallel
     const [assigneeSuggestion, similarAnalysis] = await Promise.all([
