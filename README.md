@@ -131,6 +131,22 @@ forge install --non-interactive --site <your-jira-site> --product jira --environ
 
 ## Development
 
+### Quick Start: Automated Development Flow
+
+```bash
+# Automated workflow: branch → dev → push → PR → Copilot review
+make dev-flow
+```
+
+This interactive script automates:
+1. Branch creation (feat/fix/test/refactor)
+2. Development phase
+3. Commit and push
+4. PR creation
+5. Copilot review request
+6. Review comment analysis
+7. Merge or address comments
+
 ### Local Development
 
 ```bash

@@ -228,9 +228,40 @@ make check-tools
 
 ## Development Flow
 
-### Basic Development Flow
+### Automated Development Flow (Recommended)
 
-All feature development and bug fixes should follow this flow:
+**Quick Start:**
+```bash
+make dev-flow
+```
+
+This automated script handles the entire development workflow:
+1. ✅ Branch creation (feat/fix/test/refactor)
+2. ✅ Development phase (you code)
+3. ✅ Commit and push
+4. ✅ PR creation
+5. ✅ Copilot review request (automatic)
+6. ✅ Wait 3 minutes for Copilot analysis
+7. ✅ Display Copilot comments
+8. ✅ Option to address comments or merge
+
+**Script Location:** `scripts/auto-dev-flow.sh`
+
+**Features:**
+- Interactive prompts for branch type and description
+- Automatic PR creation with GitHub CLI
+- Waits for Copilot review (3 minutes)
+- Displays Copilot comments automatically
+- Options to address comments or merge immediately
+
+**Requirements:**
+- GitHub CLI (`gh`) must be installed and authenticated
+- Must be on `main` branch with no uncommitted changes
+- Pre-push hook will enforce branch naming conventions
+
+### Manual Development Flow
+
+If you prefer manual control, follow this flow:
 
 **1. Create a branch**
 ```bash
