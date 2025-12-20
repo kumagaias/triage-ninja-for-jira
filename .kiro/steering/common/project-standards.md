@@ -95,18 +95,18 @@ make help              # Display available commands
 
 ### File Size Limits
 
-**⚠️ CRITICAL: Lines per file MUST NOT exceed 1000 lines**
+**⚠️ CRITICAL: Lines per file MUST NOT exceed 500 lines**
 
 **Lines per file:**
-- **Recommended**: 500-800 lines
-- **Maximum**: 1000 lines (HARD LIMIT)
-- **If exceeding 1000 lines**: MUST split by section immediately
+- **Recommended**: 300-400 lines
+- **Maximum**: 500 lines (HARD LIMIT)
+- **If exceeding 500 lines**: MUST split by section immediately
 
 **Split Example:**
 ```
-project-standards.md (1200 lines) → MUST SPLIT
-├── common/project-standards.md    # Common standards (< 1000 lines)
-└── project-standards.md           # Project-specific (< 1000 lines)
+tech.md (600 lines) → MUST SPLIT
+├── tech-development.md    # Development practices (< 500 lines)
+└── tech-operations.md     # Operations & deployment (< 500 lines)
 ```
 
 ### File Count Limits
@@ -130,8 +130,8 @@ project-standards.md (1200 lines) → MUST SPLIT
 # Check line count of all steering files
 wc -l .kiro/steering/*.md .kiro/steering/*/*.md
 
-# Detect files exceeding 1000 lines (CRITICAL)
-find .kiro/steering -name "*.md" -exec wc -l {} \; | awk '$1 > 1000 {print $2 " has " $1 " lines (EXCEEDS LIMIT - MUST SPLIT)"}'
+# Detect files exceeding 500 lines (CRITICAL)
+find .kiro/steering -name "*.md" -exec wc -l {} \; | awk '$1 > 500 {print $2 " has " $1 " lines (EXCEEDS LIMIT - MUST SPLIT)"}'
 ```
 
 ## Security Checks

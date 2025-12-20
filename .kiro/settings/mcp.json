@@ -76,7 +76,9 @@
         "create_issue",
         "get_issue",
         "get_pull_request",
-        "get_pull_request_comments"
+        "get_pull_request_comments",
+        "get_pull_request_reviews",
+        "update_issue"
       ]
     }
   }

@@ -8,6 +8,31 @@ const MAX_SEARCH_KEYWORDS = 5;
 const MAX_RESULTS_LIMIT = 100;
 const DEFAULT_MAX_RESULTS = 50;
 
+// Constants for similarity scoring
+const MIN_SIMILARITY_KEYWORD_LENGTH = 3;
+const MAX_SIMILARITY_KEYWORDS = 5;
+const SIMILARITY_SCORE_MULTIPLIER = 100;
+const MAX_SIMILAR_TICKETS = 3;
+const DESCRIPTION_TRUNCATE_LENGTH = 200;
+
+/**
+ * Calculate workload for a user (count of open tickets)
+ * @param accountId - User account ID
+ * @param projectKey - Project key
+ * @returns Number of open tickets assigned to the user
+ */
+async function calculateUserWorkload(accountId: string, projectKey: string): Promise<number> {
+  const workloadResponse = await JiraClient.searchIssues({
+    jql: `project = ${projectKey} AND assignee = "${accountId}" AND statusCategory != Done`,
+    maxResults: 100,
+    fields: ['key']
+  });
+  
+  return workloadResponse.ok && workloadResponse.data?.issues 
+    ? workloadResponse.data.issues.length 
+    : 0;
+}
+
 // Dashboard Resolver
 const dashboardResolver = new Resolver();
 
@@ -248,16 +273,7 @@ dashboardResolver.define('runAITriage', async (req) => {
     const availableAgents = [];
     if (usersResponse.ok && usersResponse.data) {
       for (const user of usersResponse.data) {
-        // Get current open tickets assigned to this user
-        const workloadResponse = await JiraClient.searchIssues({
-          jql: `project = ${projectKey} AND assignee = "${user.accountId}" AND statusCategory != Done`,
-          maxResults: 100,
-          fields: ['key']
-        });
-        
-        const currentLoad = workloadResponse.ok && workloadResponse.data?.issues 
-          ? workloadResponse.data.issues.length 
-          : 0;
+        const currentLoad = await calculateUserWorkload(user.accountId, projectKey);
         
         availableAgents.push({
           name: user.displayName,
@@ -548,16 +564,7 @@ issuePanelResolver.define('runAITriage', async (req) => {
     const availableAgents = [];
     if (usersResponse.ok && usersResponse.data) {
       for (const user of usersResponse.data) {
-        // Get current open tickets assigned to this user
-        const workloadResponse = await JiraClient.searchIssues({
-          jql: `project = ${projectKey} AND assignee = "${user.accountId}" AND statusCategory != Done`,
-          maxResults: 100,
-          fields: ['key']
-        });
-        
-        const currentLoad = workloadResponse.ok && workloadResponse.data?.issues 
-          ? workloadResponse.data.issues.length 
-          : 0;
+        const currentLoad = await calculateUserWorkload(user.accountId, projectKey);
         
         availableAgents.push({
           name: user.displayName,
@@ -754,10 +761,41 @@ export const issuePanelHandler = issuePanelResolver.getDefinitions();
  * @param payload - Contains issueKey
  * @param context - Forge context with user information
  * @returns Structured ticket data for AI analysis
+ * 
+ * @example
+ * // Expected response format:
+ * {
+ *   issueKey: "SUP-123",
+ *   summary: "Cannot connect to VPN",
+ *   description: "I'm unable to connect...",
+ *   reporter: "John Doe",
+ *   reporterEmail: "john@example.com",
+ *   created: "2025-12-20T10:00:00Z",
+ *   currentPriority: "Medium",
+ *   currentStatus: "Open",
+ *   labels: ["network", "vpn"],
+ *   context: {
+ *     hasDescription: true,
+ *     descriptionLength: 150,
+ *     summaryLength: 25,
+ *     age: 2
+ *   }
+ * }
  */
 export async function analyzeTicketClassification(payload: any, context: any) {
   const timestamp = new Date().toISOString();
   const { issueKey } = payload;
+  
+  // Validate context structure
+  if (!context || typeof context !== 'object') {
+    const error = 'Invalid context: context object is required';
+    console.error('[analyzeTicketClassification] Context validation error:', {
+      timestamp,
+      error,
+      receivedContext: typeof context
+    });
+    throw new Error(error);
+  }
   
   // Log action invocation (sanitized)
   console.log('[analyzeTicketClassification] Action invoked', {
@@ -855,10 +893,45 @@ export async function analyzeTicketClassification(payload: any, context: any) {
  * @param payload - Contains issueKey and category
  * @param context - Forge context with user information
  * @returns Structured agent data with workload for AI analysis
+ * 
+ * @example
+ * // Expected response format:
+ * {
+ *   issueKey: "SUP-123",
+ *   category: "Network & Connectivity",
+ *   projectKey: "SUP",
+ *   availableAgents: [
+ *     {
+ *       accountId: "5b10a2844c20165700ede21g",
+ *       displayName: "Jane Smith",
+ *       emailAddress: "jane@example.com",
+ *       currentLoad: 5,
+ *       active: true
+ *     }
+ *   ],
+ *   totalAgents: 10,
+ *   recommendation: {
+ *     accountId: "5b10a2844c20165700ede21g",
+ *     displayName: "Jane Smith",
+ *     currentLoad: 5,
+ *     reasoning: "Lowest workload (5 open tickets)"
+ *   }
+ * }
  */
 export async function suggestTicketAssignee(payload: any, context: any) {
   const timestamp = new Date().toISOString();
   const { issueKey, category } = payload;
+  
+  // Validate context structure
+  if (!context || typeof context !== 'object') {
+    const error = 'Invalid context: context object is required';
+    console.error('[suggestTicketAssignee] Context validation error:', {
+      timestamp,
+      error,
+      receivedContext: typeof context
+    });
+    throw new Error(error);
+  }
   
   // Log action invocation (sanitized)
   console.log('[suggestTicketAssignee] Action invoked', {
@@ -920,16 +993,7 @@ export async function suggestTicketAssignee(payload: any, context: any) {
     // Calculate workload for each agent
     const availableAgents = [];
     for (const user of usersResponse.data) {
-      // Count open tickets assigned to this user
-      const workloadResponse = await JiraClient.searchIssues({
-        jql: `project = ${projectKey} AND assignee = "${user.accountId}" AND statusCategory != Done`,
-        maxResults: 100,
-        fields: ['key']
-      });
-      
-      const currentLoad = workloadResponse.ok && workloadResponse.data?.issues 
-        ? workloadResponse.data.issues.length 
-        : 0;
+      const currentLoad = await calculateUserWorkload(user.accountId, projectKey);
       
       availableAgents.push({
         accountId: user.accountId,
@@ -1001,10 +1065,46 @@ export async function suggestTicketAssignee(payload: any, context: any) {
  * @param payload - Contains issueKey
  * @param context - Forge context with user information
  * @returns Similar tickets with resolution information
+ * 
+ * @example
+ * // Expected response format:
+ * {
+ *   issueKey: "SUP-123",
+ *   currentTicket: {
+ *     summary: "Cannot connect to VPN",
+ *     description: "I'm unable to connect...",
+ *     projectKey: "SUP"
+ *   },
+ *   similarTickets: [
+ *     {
+ *       key: "SUP-100",
+ *       summary: "VPN connection issues",
+ *       description: "Similar VPN problem...",
+ *       resolution: "Fixed",
+ *       resolutionDate: "2025-12-15T10:00:00Z",
+ *       assignee: "John Doe",
+ *       status: "Done",
+ *       similarityScore: 85
+ *     }
+ *   ],
+ *   totalFound: 3,
+ *   searchKeywords: "connect VPN unable"
+ * }
  */
 export async function findSimilarTickets(payload: any, context: any) {
   const timestamp = new Date().toISOString();
   const { issueKey } = payload;
+  
+  // Validate context structure
+  if (!context || typeof context !== 'object') {
+    const error = 'Invalid context: context object is required';
+    console.error('[findSimilarTickets] Context validation error:', {
+      timestamp,
+      error,
+      receivedContext: typeof context
+    });
+    throw new Error(error);
+  }
   
   // Log action invocation (sanitized)
   console.log('[findSimilarTickets] Action invoked', {
@@ -1045,13 +1145,13 @@ export async function findSimilarTickets(payload: any, context: any) {
     // Extract keywords from summary for similarity search
     const keywords = summary
       .split(' ')
-      .filter((word: string) => word.length > 3)
-      .slice(0, 5)
-      .map(word => word.replace(/[\\\"]/g, '\\$&')) // Escape special chars
+      .filter((word: string) => word.length > MIN_SIMILARITY_KEYWORD_LENGTH)
+      .slice(0, MAX_SIMILARITY_KEYWORDS)
+      .map(word => escapeJqlText(word)) // Use existing helper to prevent JQL injection
       .join(' ');
     
     // Search for resolved tickets with similar keywords
-    let similarTickets = [];
+    let similarTickets: any[] = [];
     if (keywords) {
       const searchResponse = await JiraClient.searchIssues({
         jql: `project = ${projectKey} AND statusCategory = Done AND text ~ "${keywords}" ORDER BY resolutiondate DESC`,
@@ -1073,12 +1173,12 @@ export async function findSimilarTickets(payload: any, context: any) {
             }
           }
           
-          const similarityScore = Math.round((matchCount / searchTerms.length) * 100);
+          const similarityScore = Math.round((matchCount / searchTerms.length) * SIMILARITY_SCORE_MULTIPLIER);
           
           return {
             key: issue.key,
             summary: issue.fields.summary || '',
-            description: (issue.fields.description || '').substring(0, 200), // Truncate for brevity
+            description: (issue.fields.description || '').substring(0, DESCRIPTION_TRUNCATE_LENGTH), // Truncate for brevity
             resolution: issue.fields.resolution?.name || 'Resolved',
             resolutionDate: issue.fields.resolutiondate || issue.fields.created,
             assignee: issue.fields.assignee?.displayName || 'Unknown',
@@ -1091,7 +1191,7 @@ export async function findSimilarTickets(payload: any, context: any) {
         similarTickets.sort((a, b) => b.similarityScore - a.similarityScore);
         
         // Take top 3
-        similarTickets = similarTickets.slice(0, 3);
+        similarTickets = similarTickets.slice(0, MAX_SIMILAR_TICKETS);
       }
     }
     
@@ -1100,7 +1200,7 @@ export async function findSimilarTickets(payload: any, context: any) {
       issueKey,
       currentTicket: {
         summary,
-        description: description.substring(0, 200), // Truncate for brevity
+        description: description.substring(0, DESCRIPTION_TRUNCATE_LENGTH), // Truncate for brevity
         projectKey
       },
       similarTickets,

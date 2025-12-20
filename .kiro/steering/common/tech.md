@@ -1,9 +1,14 @@
 # Technical Standards (Common)
 
-**⚠️ File Size Limit: Maximum 1000 lines per file**
+**⚠️ File Size Limit: Maximum 500 lines per file**
 
 このファイルは一般的な技術標準とベストプラクティスを定義します。
 プロジェクト固有の技術詳細については `tech.md` を参照してください。
+
+**Note:** このファイルは 935 行あり、500 行制限を超えています。
+以下のように分割する必要があります：
+- `tech-development.md`: Architecture, Technology Stack, Testing
+- `tech-operations.md`: API Design, Performance, Security, Error Handling, Logging, Code Quality, Documentation, CI/CD, Monitoring
 
 ## Architecture Patterns
 
