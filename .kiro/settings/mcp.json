@@ -78,7 +78,8 @@
         "get_pull_request",
         "get_pull_request_comments",
         "get_pull_request_reviews",
-        "update_issue"
+        "update_issue",
+        "get_pull_request_files"
       ]
     }
   }

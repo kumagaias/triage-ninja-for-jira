@@ -92,12 +92,19 @@ Install directly from the Atlassian Marketplace:
 # Check required tools
 make check-tools
 
+# Install gitleaks (if not installed)
+brew install gitleaks  # macOS
+# For other platforms: https://github.com/gitleaks/gitleaks#installing
+
 # Install dependencies
 npm install
 
 # Install frontend dependencies
 npm install --prefix static/dashboard
 npm install --prefix static/issue-panel
+
+# Setup Git hooks (security checks)
+./.kiro/hooks/common/scripts/setup-hooks.sh
 ```
 
 #### 2. Build Frontend
@@ -169,6 +176,30 @@ make security-check
 
 # Run unit tests only
 make test-unit
+```
+
+### Git Hooks
+
+The project uses Git hooks to ensure code quality and security:
+
+**Pre-push Hook (Gitleaks)**
+- Automatically scans commits for secrets before pushing
+- Prevents accidental exposure of sensitive information
+- Located at: `.kiro/hooks/common/scripts/pre-push-gitleaks.sh`
+
+**Setup Hooks**
+```bash
+# Setup all Git hooks
+./.kiro/hooks/common/scripts/setup-hooks.sh
+
+# Verify hook is installed
+ls -la .git/hooks/pre-push
+```
+
+**Bypass Hook (NOT RECOMMENDED)**
+```bash
+# Only use in emergency situations
+git push --no-verify
 ```
 
 ### Linting
