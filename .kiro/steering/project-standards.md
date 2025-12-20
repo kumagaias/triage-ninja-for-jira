@@ -243,21 +243,80 @@ This automated script handles the entire development workflow:
 5. ✅ Copilot review request (automatic)
 6. ✅ Wait 3 minutes for Copilot analysis
 7. ✅ Display Copilot comments
-8. ✅ Option to address comments or merge
+8. ⚠️ **User must manually merge the PR**
 
 **Script Location:** `scripts/auto-dev-flow.sh`
 
+**Workflow Details:**
+
+1. **Branch Type Selection**
+   - Interactive prompt to choose: feat/fix/test/refactor
+   - Validates branch naming convention
+
+2. **Branch Description**
+   - User inputs descriptive name (e.g., "add-user-authentication")
+   - Creates branch: `{type}/{description}`
+
+3. **Development Phase**
+   - Script pauses for development work
+   - User implements feature/fix
+   - Press ENTER when ready to continue
+
+4. **Commit**
+   - Shows git status
+   - User inputs commit message
+   - Automatically stages all changes (`git add -A`)
+
+5. **Push**
+   - Pushes branch to remote
+   - Pre-push hook validates branch pattern
+
+6. **PR Creation**
+   - User inputs PR title (defaults to commit message)
+   - User inputs PR description (optional)
+   - Creates PR via GitHub CLI
+
+7. **Copilot Review**
+   - Automatically triggered on PR creation
+   - Script waits 3 minutes for analysis
+   - Displays countdown timer
+
+8. **Review Comments**
+   - Fetches and displays Copilot comments
+   - Shows author and comment body
+   - If no comments, provides manual check command
+
+9. **Next Steps**
+   - Script displays PR URL and number
+   - Shows instructions for addressing comments
+   - **User must manually merge the PR after review**
+
 **Features:**
-- Interactive prompts for branch type and description
-- Automatic PR creation with GitHub CLI
-- Waits for Copilot review (3 minutes)
-- Displays Copilot comments automatically
-- Options to address comments or merge immediately
+- Color-coded output for better readability
+- Error handling with `set -e`
+- Validation checks (main branch, uncommitted changes)
+- GitHub CLI integration for PR operations
+- 3-minute countdown timer for Copilot analysis
+- JSON parsing for Copilot comments
 
 **Requirements:**
 - GitHub CLI (`gh`) must be installed and authenticated
 - Must be on `main` branch with no uncommitted changes
 - Pre-push hook will enforce branch naming conventions
+
+**Error Handling:**
+- Validates current branch is `main`
+- Checks for uncommitted changes before starting
+- Validates branch description is not empty
+- Validates commit message is not empty
+- Checks for changes before committing
+- Exits gracefully on errors
+
+**Important Notes:**
+- ⚠️ **Merge is NOT automated** - User must manually merge PR
+- Script stays on feature branch after completion
+- User can continue making changes and pushing updates
+- Pre-push hook prevents accidental push to main branch
 
 ### Manual Development Flow
 
