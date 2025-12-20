@@ -8,13 +8,13 @@
   - Test actions independently
   - _Requirements: 1.1, 1.2, 2.1, 2.2, 3.1, 3.2_
 
-- [ ] 1.1 Create analyze-ticket-classification action
+- [x] 1.1 Create analyze-ticket-classification action
   - Add action module to manifest.yml with key, name, function, actionVerb, description, and inputs
   - Define input: issueKey (string, required)
   - Reference function: analyzeTicketClassification
   - _Requirements: 1.1, 3.1_
 
-- [ ] 1.2 Implement analyzeTicketClassification function
+- [x] 1.2 Implement analyzeTicketClassification function
   - Create function in src/index.ts
   - Extract issueKey from payload
   - Fetch ticket data using Jira API
@@ -22,13 +22,13 @@
   - Add error handling and logging
   - _Requirements: 1.1, 1.2, 1.5, 4.1, 4.4, 5.1, 5.2, 5.3_
 
-- [ ] 1.3 Create suggest-ticket-assignee action
+- [x] 1.3 Create suggest-ticket-assignee action
   - Add action module to manifest.yml
   - Define inputs: issueKey (string, required), category (string, required)
   - Reference function: suggestTicketAssignee
   - _Requirements: 2.1, 3.1_
 
-- [ ] 1.4 Implement suggestTicketAssignee function
+- [x] 1.4 Implement suggestTicketAssignee function
   - Create function in src/index.ts
   - Extract issueKey and category from payload
   - Fetch available agents from Jira
@@ -37,13 +37,13 @@
   - Add error handling and logging
   - _Requirements: 2.1, 2.2, 2.4, 4.1, 4.4, 5.1, 5.2, 5.3_
 
-- [ ] 1.5 Create find-similar-tickets action
+- [x] 1.5 Create find-similar-tickets action
   - Add action module to manifest.yml
   - Define input: issueKey (string, required)
   - Reference function: findSimilarTickets
   - _Requirements: 3.1_
 
-- [ ] 1.6 Implement findSimilarTickets function
+- [x] 1.6 Implement findSimilarTickets function
   - Create function in src/index.ts
   - Extract issueKey from payload
   - Fetch current ticket data
@@ -53,7 +53,7 @@
   - Add error handling and logging
   - _Requirements: 4.1, 4.4, 5.1, 5.2, 5.3_
 
-- [ ] 1.7 Add action references to rovo:agent module
+- [x] 1.7 Add action references to rovo:agent module
   - Update manifest.yml rovo:agent module
   - Add actions array with three action keys
   - Verify manifest syntax with forge lint
