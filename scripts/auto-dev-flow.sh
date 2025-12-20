@@ -159,37 +159,19 @@ else
     echo "$comments" | jq -r '.body'
 fi
 
-# Step 8: Review response options
-echo ""
-print_step "Step 8: Next steps"
-echo "  1) Address Copilot comments now"
-echo "  2) Merge PR (if no issues)"
-echo "  3) Exit and handle manually"
-read -p "Enter number (1-3): " next_step
-
-case $next_step in
-    1)
-        print_warning "Make your changes, then run:"
-        echo "  git add -A"
-        echo "  git commit -m 'fix: Address Copilot review comments'"
-        echo "  git push origin $branch_name"
-        ;;
-    2)
-        print_step "Merging Pull Request"
-        gh pr merge "$pr_number" --squash --delete-branch
-        git checkout main
-        git pull origin main
-        print_success "PR merged and branch deleted"
-        ;;
-    3)
-        print_success "Exiting. You can manage the PR manually."
-        echo "PR URL: $pr_url"
-        ;;
-    *)
-        print_error "Invalid selection"
-        ;;
-esac
-
+# Step 8: Completion
 echo ""
 print_success "Development flow completed!"
+echo ""
+echo "PR created: $pr_url"
+echo "PR number: #$pr_number"
+echo ""
+print_warning "Next steps:"
+echo "  1. Review Copilot comments (if any)"
+echo "  2. Address comments if needed:"
+echo "     git add -A"
+echo "     git commit -m 'fix: Address review comments'"
+echo "     git push origin $branch_name"
+echo "  3. Ask user to merge the PR"
+echo ""
 echo "Current branch: $(git symbolic-ref --short HEAD)"
