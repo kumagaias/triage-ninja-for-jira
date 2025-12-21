@@ -16,7 +16,6 @@ interface MetricsData {
   confidenceScores: {
     sum: number;
     count: number;
-    average: number;
   };
   lastReset: string;
 }
@@ -43,8 +42,7 @@ class MetricsTracker {
       },
       confidenceScores: {
         sum: 0,
-        count: 0,
-        average: 0
+        count: 0
       },
       lastReset: new Date().toISOString()
     };
@@ -60,8 +58,6 @@ class MetricsTracker {
     if (typeof confidence === 'number' && confidence >= 0 && confidence <= 100) {
       this.metrics.confidenceScores.sum += confidence;
       this.metrics.confidenceScores.count++;
-      this.metrics.confidenceScores.average = 
-        this.metrics.confidenceScores.sum / this.metrics.confidenceScores.count;
     }
 
     this.checkAndLogMetrics();
@@ -109,13 +105,14 @@ class MetricsTracker {
 
   /**
    * Get fallback rate as percentage
+   * Defined as: (number of calls that used fallback) / (total Rovo Agent calls)
    */
   getFallbackRate(): number {
-    const total = this.metrics.rovoAgentCalls.total + this.metrics.fallbackUsage.total;
-    if (total === 0) {
+    const totalCalls = this.metrics.rovoAgentCalls.total;
+    if (totalCalls === 0) {
       return 0;
     }
-    return (this.metrics.fallbackUsage.total / total) * 100;
+    return (this.metrics.fallbackUsage.total / totalCalls) * 100;
   }
 
   /**
@@ -147,6 +144,9 @@ class MetricsTracker {
     const timestamp = new Date().toISOString();
     const successRate = this.getSuccessRate();
     const fallbackRate = this.getFallbackRate();
+    const averageConfidence = this.metrics.confidenceScores.count > 0
+      ? this.metrics.confidenceScores.sum / this.metrics.confidenceScores.count
+      : 0;
 
     console.log('[Metrics] Usage statistics', {
       timestamp,
@@ -166,7 +166,7 @@ class MetricsTracker {
         reasons: this.metrics.fallbackUsage.reasons
       },
       confidence: {
-        average: this.metrics.confidenceScores.average.toFixed(2),
+        average: averageConfidence.toFixed(2),
         samples: this.metrics.confidenceScores.count
       }
     });

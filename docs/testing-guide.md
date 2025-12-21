@@ -10,14 +10,12 @@ This guide covers testing strategies for TriageNinja, including unit tests, inte
 src/
 ├── actions/__tests__/
 │   └── rovoActions.test.ts       # Rovo action tests
-├── resolvers/__tests__/
-│   ├── dashboardResolver.test.ts # Dashboard resolver tests (TODO)
-│   └── issuePanelResolver.test.ts # Issue panel resolver tests (TODO)
 ├── services/__tests__/
 │   ├── jiraClient.test.ts        # Jira API client tests
 │   └── rovoAgent.test.ts         # Rovo Agent service tests
 └── utils/__tests__/
-    └── helpers.test.ts            # Utility function tests
+    ├── helpers.test.ts            # Utility function tests
+    └── metrics.test.ts            # Metrics tracking tests (TODO)
 
 e2e/
 └── triage-flow.spec.ts            # End-to-end tests
