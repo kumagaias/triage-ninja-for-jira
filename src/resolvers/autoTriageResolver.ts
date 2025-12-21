@@ -64,11 +64,9 @@ export async function runAutoTriage(req: any) {
     });
     
     const updateResponse = await JiraClient.updateIssue(issueKey, {
-      fields: {
-        assignee: { accountId: assigneeSuggestion.recommendation.accountId },
-        priority: { name: newPriority },
-        labels: [...new Set([...existingLabels, `category:${category}`, 'ai-triaged'])]
-      }
+      assignee: { accountId: assigneeSuggestion.recommendation.accountId },
+      priority: { name: newPriority },
+      labels: [...new Set([...existingLabels, `category:${category}`, 'ai-triaged'])]
     });
     
     if (!updateResponse.ok) {
@@ -97,12 +95,23 @@ _Triaged by TriageNinja AI Agent at ${new Date().toLocaleString()}_`;
       // Don't fail the whole operation if comment fails
     }
     
+    // Get top 3 candidates (including the assigned one)
+    const topCandidates = assigneeSuggestion.availableAgents
+      .slice(0, 3)
+      .map((agent: any) => ({
+        accountId: agent.accountId,
+        displayName: agent.displayName,
+        currentLoad: agent.currentLoad,
+        reasoning: `Current workload: ${agent.currentLoad} open tickets`
+      }));
+    
     console.log('[runAutoTriage] Auto triage completed successfully', {
       timestamp,
       issueKey,
       assignee: assigneeSuggestion.recommendation.displayName,
       priority: newPriority,
-      category
+      category,
+      candidatesCount: topCandidates.length
     });
     
     return {
@@ -115,7 +124,8 @@ _Triaged by TriageNinja AI Agent at ${new Date().toLocaleString()}_`;
           accountId: assigneeSuggestion.recommendation.accountId,
           displayName: assigneeSuggestion.recommendation.displayName
         },
-        reasoning: assigneeSuggestion.recommendation.reasoning
+        reasoning: assigneeSuggestion.recommendation.reasoning,
+        candidates: topCandidates
       }
     };
     

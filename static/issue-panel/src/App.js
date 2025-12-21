@@ -144,7 +144,8 @@ function App() {
             priority: result.result.priority,
             assignee: result.result.assignee.displayName,
             category: result.result.category,
-            subCategory: result.result.category // Use same for now
+            subCategory: result.result.category, // Use same for now
+            candidates: result.result.candidates || []
           });
           
           // Reload issue details
@@ -325,6 +326,41 @@ function App() {
     // Clear the triage result and allow user to run again
     setTriageResult(null);
   };
+  
+  // Handle assignee change
+  const handleChangeAssignee = async (accountId, displayName) => {
+    if (!issueDetails) return;
+    
+    setLoading(true);
+    setError(null);
+    
+    try {
+      // Update assignee via Jira API
+      const response = await invoke('changeAssignee', {
+        issueKey: issueDetails.key,
+        accountId: accountId
+      });
+      
+      if (response.success) {
+        // Update success message with new assignee
+        setSuccessMessage({
+          ...successMessage,
+          assignee: displayName
+        });
+        
+        // Reload issue details
+        const updatedDetails = await invoke('getIssueDetails');
+        setIssueDetails(updatedDetails);
+      } else {
+        setError('Failed to change assignee');
+      }
+    } catch (err) {
+      console.error('Failed to change assignee:', err);
+      setError('Failed to change assignee');
+    } finally {
+      setLoading(false);
+    }
+  };
 
   if (!issueDetails) {
     return (
@@ -408,6 +444,32 @@ function App() {
             <li>{t.assignee}: <strong>{successMessage.assignee}</strong></li>
             <li>{t.labels}: <strong>{successMessage.category}, {successMessage.subCategory}</strong></li>
           </ul>
+          
+          {/* Candidate List */}
+          {successMessage.candidates && successMessage.candidates.length > 0 && (
+            <div className="candidates-section">
+              <h4 className="candidates-title">Other Candidates:</h4>
+              <div className="candidates-list">
+                {successMessage.candidates.map((candidate, index) => (
+                  <div key={candidate.accountId} className="candidate-item">
+                    <div className="candidate-info">
+                      <span className="candidate-rank">#{index + 1}</span>
+                      <span className="candidate-name">{candidate.displayName}</span>
+                      <span className="candidate-load">({candidate.currentLoad} tickets)</span>
+                    </div>
+                    <button
+                      onClick={() => handleChangeAssignee(candidate.accountId, candidate.displayName)}
+                      className="candidate-change-button"
+                      disabled={loading}
+                    >
+                      Change
+                    </button>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+          
           <div className="success-message-note">
             {t.refreshNote}
           </div>
