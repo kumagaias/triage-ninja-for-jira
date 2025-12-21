@@ -312,19 +312,210 @@ Body: |
   View ticket: {{issue.url}}
 ```
 
+## Rule 2: Manual Triage (On-Demand)
+
+This rule allows users to manually trigger AI triage for existing tickets by adding a label.
+
+### Configuration
+
+**Name:** `TriageNinja - Manual Triage on Label`
+
+**Trigger:** Issue Updated
+
+**Conditions:**
+- Label `run-ai-triage` is added
+
+**Actions:**
+1. Invoke Rovo Agent
+2. Update issue fields based on Rovo Agent response
+3. Remove `run-ai-triage` label
+
+### Step-by-Step Setup
+
+#### Step 1: Create New Automation Rule
+
+1. Navigate to **Project Settings** → **Automation**
+2. Click **Create rule** button
+3. Select **Issue updated** as the trigger
+
+#### Step 2: Configure Trigger
+
+1. **Trigger:** Issue updated
+2. Click **Save**
+
+#### Step 3: Add Condition
+
+1. Click **Add condition**
+2. Select **Issue fields condition**
+3. Configure:
+   - **Field:** Labels
+   - **Condition:** contains
+   - **Value:** `run-ai-triage`
+4. Click **Save**
+
+#### Step 4: Add Rovo Agent Action
+
+1. Click **Add action**
+2. Select **Invoke Rovo Agent** (under AI/Automation section)
+3. Configure:
+   - **Agent:** Select `TriageNinja Rovo Agent`
+   - **Prompt:**
+     ```
+     Analyze this ticket and provide triage recommendations.
+     
+     Use the following actions to gather information:
+     1. analyze-ticket-classification - Get ticket details and context
+     2. suggest-ticket-assignee - Get available agents and workload
+     3. find-similar-tickets - Find similar resolved tickets
+     
+     Based on the analysis, provide:
+     - Category and subcategory
+     - Priority (High/Medium/Low)
+     - Urgency (Urgent/Normal)
+     - Suggested assignee with reasoning
+     - Confidence score (0-100)
+     
+     Return results in JSON format:
+     {
+       "category": "string",
+       "subCategory": "string",
+       "priority": "High|Medium|Low",
+       "urgency": "Urgent|Normal",
+       "assignee": {
+         "accountId": "string",
+         "displayName": "string",
+         "reasoning": "string"
+       },
+       "confidence": number,
+       "tags": ["string"]
+     }
+     ```
+4. Click **Save**
+
+#### Step 5: Add Update Issue Action
+
+1. Click **Add action**
+2. Select **Edit issue**
+3. Configure fields to update using the smart values returned by your Rovo Agent:
+   - **Assignee:** set to the assignee account ID from the Rovo Agent output (for example: `{{rovoOutput.assignee.accountId}}`)
+   - **Priority:** map from the priority value in the Rovo Agent output (for example: `{{rovoOutput.priority}}`)
+     - High → Highest or High
+     - Medium → Medium
+     - Low → Low or Lowest
+   - **Labels:** Add labels:
+     - `ai-triaged`
+     - `ai-category:{{rovoOutput.category}}`
+     - `ai-confidence:{{rovoOutput.confidence}}`
+
+   > **Note:** The exact smart value paths (e.g. `{{rovoOutput.assignee.accountId}}`) depend on how Rovo Agent is integrated with your Jira site. After running the rule once, open the rule's **Audit log**, expand the **Invoke Rovo Agent** action, and use **Inspect smart values** (or view the response payload) to copy the correct variable paths for your instance.
+
+4. Click **Save**
+
+#### Step 6: Add Remove Label Action
+
+1. Click **Add action**
+2. Select **Edit issue**
+3. Configure:
+   - **Labels:** Remove label `run-ai-triage`
+4. Click **Save**
+
+> **Important:** Removing the label signals completion to the frontend, which polls for this change.
+
+#### Step 7: Name and Activate Rule
+
+1. Click **Turn on rule** at the top
+2. Enter rule name: `TriageNinja - Manual Triage on Label`
+3. Click **Turn it on**
+
+### Testing
+
+1. Open an existing ticket in Jira
+2. Manually add the label `run-ai-triage` to the ticket
+3. Wait 5-10 seconds for automation to run
+4. Verify the ticket was updated:
+   - ✅ Assignee is set (if previously empty or changed)
+   - ✅ Priority is updated
+   - ✅ Labels include `ai-triaged`, `ai-category:*`, `ai-confidence:*`
+   - ✅ Label `run-ai-triage` is removed
+5. Check Automation audit log:
+   - Go to **Project Settings** → **Automation**
+   - Click **Audit log**
+   - Find your rule execution
+   - Verify it completed successfully
+
+### Frontend Integration
+
+The TriageNinja issue panel includes a **"Run AI Triage"** button that:
+
+1. Adds the `run-ai-triage` label to the ticket
+2. Shows a loading state
+3. Polls every 2 seconds to check if the label is removed
+4. Refreshes the ticket data when complete
+5. Times out after 30 seconds if not completed
+
+This provides a seamless user experience for on-demand triage.
+
+### Troubleshooting
+
+#### Rule doesn't trigger
+
+**Possible causes:**
+- Label was not added correctly
+- Rule is not activated
+- Condition doesn't match
+
+**Solution:**
+- Verify label name is exactly `run-ai-triage` (case-sensitive)
+- Check rule is turned on
+- Review rule conditions in automation settings
+
+#### Label not removed
+
+**Possible causes:**
+- Remove label action not configured
+- Insufficient permissions
+- Action failed before reaching remove step
+
+**Solution:**
+- Verify Step 6 is configured correctly
+- Check automation has permission to edit issues
+- Review audit log for errors in previous actions
+
+#### Frontend polling times out
+
+**Possible causes:**
+- Automation takes longer than 30 seconds
+- Automation failed silently
+- Label removal action failed
+
+**Solution:**
+- Check automation audit log for execution time
+- Verify all actions completed successfully
+- Increase polling timeout if needed (requires code change)
+
+### Use Cases
+
+Manual triage is useful for:
+
+- **Re-triaging tickets** - When initial assignment was incorrect
+- **Existing tickets** - Triage tickets created before automation was enabled
+- **Selective triage** - Only triage specific tickets on demand
+- **Testing** - Verify AI recommendations before enabling automatic triage
+- **Override scenarios** - When automatic triage was skipped due to conditions
+
 ## Next Steps
 
 After setting up automatic triage:
 
 1. ✅ Test with sample tickets
 2. ✅ Monitor for 1-2 weeks
-3. ✅ Set up **Manual Triage** rule (documented separately)
+3. ✅ Set up **Manual Triage** rule (see [Rule 2](#rule-2-manual-triage-on-demand))
 4. ✅ Train team on new workflow
 5. ✅ Gather feedback and iterate
 
 ## Related Documentation
 
-- Manual Triage Automation Rule (coming soon)
+- [Manual Triage Automation Rule](#rule-2-manual-triage-on-demand)
 - [Rovo Agent Integration Guide](./rovo-integration.md)
 
 ## Support
