@@ -42,6 +42,59 @@ modules:
         - Always explain your reasoning
         
         Respond in JSON format as specified in each request.
+      actions:
+        - analyze-ticket-classification
+        - suggest-ticket-assignee
+        - find-similar-tickets
+  
+  # Rovo Actions
+  action:
+    - key: analyze-ticket-classification
+      name: Analyze Ticket Classification
+      function: analyze-classification
+      actionVerb: GET
+      description: |
+        Analyze a Jira ticket and determine its category, subcategory, 
+        priority, and urgency based on the summary and description.
+      inputs:
+        issueKey:
+          title: Issue Key
+          type: string
+          required: true
+          description: "The Jira issue key (e.g., SUP-123)"
+    
+    - key: suggest-ticket-assignee
+      name: Suggest Ticket Assignee
+      function: suggest-assignee
+      actionVerb: GET
+      description: |
+        Suggest the best assignee for a ticket based on category, 
+        team member skills, current workload, and historical performance.
+      inputs:
+        issueKey:
+          title: Issue Key
+          type: string
+          required: true
+          description: "The Jira issue key"
+        category:
+          title: Category
+          type: string
+          required: true
+          description: "The ticket category"
+    
+    - key: find-similar-tickets
+      name: Find Similar Tickets
+      function: find-similar
+      actionVerb: GET
+      description: |
+        Find similar past tickets based on summary and description 
+        to help with resolution.
+      inputs:
+        issueKey:
+          title: Issue Key
+          type: string
+          required: true
+          description: "The Jira issue key"
   
   # Resolver Functions
   function:
@@ -49,6 +102,12 @@ modules:
       handler: index.dashboardHandler
     - key: issue-panel-resolver
       handler: index.issuePanelHandler
+    - key: analyze-classification
+      handler: index.analyzeTicketClassification
+    - key: suggest-assignee
+      handler: index.suggestTicketAssignee
+    - key: find-similar
+      handler: index.findSimilarTickets
 
 resources:
   - key: dashboard
