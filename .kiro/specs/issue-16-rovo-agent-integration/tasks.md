@@ -65,7 +65,7 @@
   - Test automation rules in Jira
   - _Requirements: 1.1, 2.1, 4.1_
 
-- [ ] 2.1 Document automatic triage automation rule
+- [x] 2.1 Document automatic triage automation rule
   - Create docs/automation-rules.md
   - Document trigger: Issue Created
   - Document conditions: Issue type, Assignee empty
