@@ -145,28 +145,28 @@
   - Log metrics periodically
   - _Requirements: 6.1, 6.2, 6.3, 6.4, 6.5_
 
-- [ ] 5. Update documentation
+- [x] 5. Update documentation
   - Document Rovo Agent integration architecture
   - Provide setup instructions for automation rules
   - Document prompt engineering guidelines
   - _Requirements: 7.1, 7.2, 7.3, 7.4, 7.5_
 
-- [ ] 5.1 Create Rovo Agent integration guide
-  - Create docs/rovo-agent-integration.md
+- [x] 5.1 Create Rovo Agent integration guide
+  - Create docs/rovo-integration.md
   - Document architecture and data flow
   - Explain three-tier triage system
   - Document Rovo Actions and their purposes
   - _Requirements: 7.1, 7.2_
 
-- [ ] 5.2 Document automation rule setup
-  - Add to docs/rovo-agent-integration.md
+- [x] 5.2 Document automation rule setup
+  - Add to docs/rovo-integration.md
   - Step-by-step instructions for creating rules
   - Screenshots of Jira Automation UI
   - Troubleshooting common issues
   - _Requirements: 7.1, 7.2_
 
-- [ ] 5.3 Document prompt engineering
-  - Create docs/prompt-engineering.md
+- [x] 5.3 Document prompt engineering
+  - Add to docs/rovo-integration.md
   - Document prompt structure for classification
   - Document prompt structure for assignee suggestion
   - Provide examples of expected JSON responses
@@ -174,7 +174,7 @@
   - Provide optimization guidelines
   - _Requirements: 7.1, 7.2, 7.3, 7.4, 7.5_
 
-- [ ] 5.4 Update README.md
+- [x] 5.4 Update README.md
   - Add Rovo Agent integration section
   - Explain automatic and manual triage modes
   - Link to detailed documentation

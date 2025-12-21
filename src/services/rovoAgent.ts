@@ -1,4 +1,5 @@
 import api from '@forge/api';
+import { metricsTracker } from '../utils/metrics';
 
 /**
  * Rovo Agent Service
@@ -208,6 +209,9 @@ Respond in the following JSON format:
       tags
     };
     
+    // Track fallback usage since we're using keyword-based classification
+    metricsTracker.trackFallback('keyword-based-classification');
+    
     return {
       category: result.category || 'Uncategorized',
       subCategory: result.subCategory || 'General',
@@ -219,6 +223,10 @@ Respond in the following JSON format:
     };
   } catch (error) {
     console.error('Error in classifyTicket:', error);
+    
+    // Track failure
+    metricsTracker.trackRovoFailure();
+    metricsTracker.trackFallback('error');
     
     // Return fallback result
     return {
@@ -273,6 +281,7 @@ export async function suggestAssignee(input: SuggestAssigneeInput): Promise<Sugg
     
     // Fallback if no agents available
     if (input.availableAgents.length === 0) {
+      metricsTracker.trackFallback('no-agents-available');
       return {
         assignee: 'Unassigned',
         assigneeId: '',
@@ -292,6 +301,9 @@ export async function suggestAssignee(input: SuggestAssigneeInput): Promise<Sugg
       reason: `Current workload: ${agent.currentLoad} tickets`
     }));
     
+    // Track fallback usage since we're using workload-based selection
+    metricsTracker.trackFallback('workload-based-selection');
+    
     return {
       assignee: bestAgent.name,
       assigneeId: bestAgent.id,
@@ -302,6 +314,10 @@ export async function suggestAssignee(input: SuggestAssigneeInput): Promise<Sugg
     };
   } catch (error) {
     console.error('Error in suggestAssignee:', error);
+    
+    // Track failure
+    metricsTracker.trackRovoFailure();
+    metricsTracker.trackFallback('error');
     
     // Return first available agent as fallback
     const firstAgent = input.availableAgents[0];
@@ -328,6 +344,7 @@ export async function findSimilarTickets(input: FindSimilarInput): Promise<FindS
     console.log('Finding similar tickets with mock logic (Rovo Agent not yet available)');
     
     if (input.pastTickets.length === 0) {
+      metricsTracker.trackFallback('no-past-tickets');
       return {
         similarTickets: [],
         suggestedActions: ['No similar tickets found. This appears to be a new type of issue.']
@@ -376,12 +393,20 @@ export async function findSimilarTickets(input: FindSimilarInput): Promise<FindS
         ]
       : ['No similar tickets found. Treat as a new issue type.'];
     
+    // Track fallback usage since we're using keyword-based matching
+    metricsTracker.trackFallback('keyword-based-matching');
+    
     return {
       similarTickets,
       suggestedActions
     };
   } catch (error) {
     console.error('Error in findSimilarTickets:', error);
+    
+    // Track failure
+    metricsTracker.trackRovoFailure();
+    metricsTracker.trackFallback('error');
+    
     return {
       similarTickets: [],
       suggestedActions: ['AI analysis failed, manual review recommended']

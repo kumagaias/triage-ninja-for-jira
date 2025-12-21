@@ -32,6 +32,52 @@ TriageNinja automates ticket triage using AI, reducing manual work by 80% and im
 - View past solutions
 - Estimated resolution time
 
+### 🎯 Three-Tier Triage System
+- **Automatic Triage**: AI analyzes new tickets instantly
+- **Manual Triage**: On-demand analysis via button click
+- **Fallback Logic**: Keyword-based triage when AI is unavailable
+
+## Rovo Agent Integration
+
+TriageNinja uses **Atlassian Rovo Agent** for intelligent ticket analysis through three specialized actions:
+
+### 1. Ticket Classification
+- Analyzes ticket summary and description
+- Determines category and subcategory
+- Recommends priority and urgency
+- Provides confidence score and reasoning
+
+### 2. Assignee Suggestion
+- Evaluates team member workload
+- Matches skills to ticket category
+- Considers historical assignment patterns
+- Recommends best assignee with alternatives
+
+### 3. Similar Ticket Search
+- Searches resolved tickets with similar content
+- Calculates similarity scores
+- Provides resolution information
+- Suggests proven solutions
+
+### How It Works
+
+**Automatic Triage** (New Tickets):
+```
+New Ticket Created → Jira Automation → Rovo Agent → Update Ticket
+```
+
+**Manual Triage** (Existing Tickets):
+```
+Button Click → Add Label → Jira Automation → Rovo Agent → Update Ticket → Remove Label
+```
+
+**Fallback** (When Rovo Unavailable):
+```
+Error Detected → Keyword-Based Classification → Update Ticket
+```
+
+For detailed setup instructions, see [Rovo Integration Guide](docs/rovo-integration.md).
+
 ## Tech Stack
 
 - **Platform**: Atlassian Forge (Serverless)
