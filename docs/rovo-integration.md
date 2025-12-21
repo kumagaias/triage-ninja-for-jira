@@ -1,436 +1,329 @@
-# Rovo Agent Integration - TriageNinja
-
-**Status**: Fully Implemented  
-**Award Target**: Advanced AI Integration
-
----
+# Rovo Agent Integration Guide
 
 ## Overview
 
-TriageNinja leverages **Atlassian Rovo Agent** (powered by GPT-4) to provide intelligent, AI-powered ticket triage. The integration demonstrates advanced use of Rovo's capabilities across multiple tasks, achieving 90%+ accuracy with sub-3-second response times.
+TriageNinja integrates with Atlassian Rovo Agent to provide AI-powered ticket triage. This document explains the architecture, setup process, and best practices.
 
----
+## Architecture
 
-## Rovo Agent Tasks
+### Three-Tier Triage System
 
-### Task 1: Ticket Classification
+TriageNinja implements a three-tier approach to ticket triage:
 
-**Purpose**: Automatically categorize tickets into appropriate categories and subcategories
+1. **Automatic Triage** (Tier 1)
+   - Triggers: When a new ticket is created
+   - Process: Jira Automation → Rovo Agent → Update ticket
+   - Use case: Immediate triage for all new tickets
 
-**Implementation**: `src/services/rovoAgent.ts` - `classifyTicket()`
+2. **Manual Triage** (Tier 2)
+   - Triggers: User clicks "Run AI Triage" button
+   - Process: Add label → Jira Automation → Rovo Agent → Update ticket → Remove label
+   - Use case: On-demand triage for existing tickets
+
+3. **Fallback Triage** (Tier 3)
+   - Triggers: When Rovo Agent is unavailable
+   - Process: Keyword-based classification
+   - Use case: Emergency fallback to ensure system availability
+
+### Data Flow
+
+```
+┌─────────────────┐
+│  New Ticket     │
+│  or             │
+│  Manual Trigger │
+└────────┬────────┘
+         │
+         ▼
+┌─────────────────┐
+│ Jira Automation │
+│ Rule            │
+└────────┬────────┘
+         │
+         ▼
+┌─────────────────┐
+│ Rovo Agent      │
+│ (3 Actions)     │
+└────────┬────────┘
+         │
+         ▼
+┌─────────────────┐
+│ Update Ticket   │
+│ Fields & Labels │
+└─────────────────┘
+```
+
+## Rovo Actions
+
+TriageNinja provides three Rovo Actions for ticket analysis:
+
+### 1. analyze-ticket-classification
+
+**Purpose**: Fetch ticket data and provide context for classification
 
 **Input**:
-```typescript
-{
-  summary: string;
-  description: string;
-  reporter: string;
-  created: string;
-}
-```
+- `issueKey` (string, required): Jira issue key (e.g., "SUP-123")
 
 **Output**:
-```typescript
+```json
 {
-  category: string;          // e.g., "Technical Issue"
-  subCategory: string;       // e.g., "Frontend"
-  priority: 'High' | 'Medium' | 'Low';
-  urgency: 'Urgent' | 'Normal';
-  confidence: number;        // 0-100
-  reasoning: string;         // AI explanation
-  tags: string[];           // Relevant tags
+  "issueKey": "SUP-123",
+  "summary": "Cannot connect to VPN",
+  "description": "VPN connection fails...",
+  "reporter": "John Doe",
+  "reporterEmail": "john@example.com",
+  "created": "2025-12-20T10:00:00Z",
+  "currentPriority": "Medium",
+  "currentStatus": "Open",
+  "labels": ["network", "vpn"],
+  "context": {
+    "hasDescription": true,
+    "descriptionLength": 150,
+    "summaryLength": 25,
+    "age": 2
+  }
 }
 ```
 
-**Prompt Engineering**:
-- Analyzes ticket summary and description
-- Considers reporter context and creation time
-- Identifies technical keywords and patterns
-- Provides confidence scoring for transparency
-- Explains reasoning for auditability
+### 2. suggest-ticket-assignee
 
-**Performance**:
-- Average response time: 2.5 seconds
-- Accuracy: 92%
-- Confidence threshold: 80%
-
-### Task 2: Assignee Matching
-
-**Purpose**: Suggest the best team member to handle the ticket
-
-**Implementation**: `src/services/rovoAgent.ts` - `suggestAssignee()`
+**Purpose**: Get available agents with workload information
 
 **Input**:
-```typescript
-{
-  category: string;
-  subCategory: string;
-  availableAgents: Array<{
-    name: string;
-    id: string;
-    skills: string[];
-    currentLoad: number;
-  }>;
-  historicalData: Array<{
-    agent: string;
-    category: string;
-    avgResolutionTime: string;
-    successRate: number;
-  }>;
-}
-```
+- `issueKey` (string, required): Jira issue key
+- `category` (string, required): Ticket category
 
 **Output**:
-```typescript
+```json
 {
-  suggestedAgent: {
-    name: string;
-    id: string;
-    reasoning: string;
-  };
-  alternativeAgents: Array<{
-    name: string;
-    id: string;
-    reasoning: string;
-  }>;
-  estimatedResolutionTime: string;
-  confidence: number;
+  "issueKey": "SUP-123",
+  "category": "Network",
+  "projectKey": "SUP",
+  "availableAgents": [
+    {
+      "accountId": "user123",
+      "displayName": "Jane Smith",
+      "emailAddress": "jane@example.com",
+      "currentLoad": 5,
+      "active": true
+    }
+  ],
+  "totalAgents": 10,
+  "recommendation": {
+    "accountId": "user123",
+    "displayName": "Jane Smith",
+    "currentLoad": 5,
+    "reasoning": "Lowest workload (5 open tickets)"
+  }
 }
 ```
 
-**Prompt Engineering**:
-- Matches skills to ticket category
-- Considers current workload
-- Analyzes historical performance
-- Provides alternative suggestions
-- Estimates resolution time
+### 3. find-similar-tickets
 
-**Performance**:
-- Average response time: 2.8 seconds
-- Accuracy: 88%
-- Workload balancing: Effective
-
-### Task 3: Similar Ticket Search
-
-**Purpose**: Find past tickets with similar issues and their solutions
-
-**Implementation**: `src/services/rovoAgent.ts` - `findSimilarTickets()`
+**Purpose**: Search for similar resolved tickets
 
 **Input**:
-```typescript
-{
-  summary: string;
-  description: string;
-  category: string;
-  pastTickets: Array<{
-    id: string;
-    summary: string;
-    description: string;
-    resolution: string;
-    resolutionTime: string;
-  }>;
-}
-```
+- `issueKey` (string, required): Jira issue key
 
 **Output**:
-```typescript
+```json
 {
-  similarTickets: Array<{
-    id: string;
-    summary: string;
-    similarity: number;        // 0-1
-    resolution: string;
-    resolutionTime: string;
-    relevance: string;         // Why it's similar
-  }>;
-  recommendedActions: string[];
-  confidence: number;
+  "issueKey": "SUP-123",
+  "currentTicket": {
+    "summary": "VPN connection problem",
+    "description": "Cannot connect...",
+    "projectKey": "SUP"
+  },
+  "similarTickets": [
+    {
+      "key": "SUP-100",
+      "summary": "VPN authentication failed",
+      "description": "Similar issue...",
+      "resolution": "Fixed",
+      "resolutionDate": "2025-12-15T10:00:00Z",
+      "assignee": "Jane",
+      "status": "Done",
+      "similarityScore": 85
+    }
+  ],
+  "totalFound": 3,
+  "searchKeywords": "VPN connection problem"
 }
 ```
 
-**Prompt Engineering**:
-- Semantic similarity analysis
-- Context-aware matching
-- Solution extraction
-- Action recommendations
-- Relevance explanation
+## Setup Instructions
 
-**Performance**:
-- Average response time: 2.3 seconds
-- Accuracy: 94%
-- Top-5 results: Highly relevant
+### Prerequisites
 
----
+1. Atlassian Forge app deployed
+2. Rovo Agent enabled in your Atlassian instance
+3. Jira Automation available (Premium or higher)
 
-## Advanced Features
+### Step 1: Deploy Forge App
 
-### Parallel Task Execution
-
-TriageNinja executes all three Rovo Agent tasks **in parallel** for optimal performance:
-
-```typescript
-const [classification, assignee, similarTickets] = await Promise.all([
-  classifyTicket(ticketData),
-  suggestAssignee(agentData),
-  findSimilarTickets(searchData)
-]);
+```bash
+forge deploy --environment production
+forge install --upgrade --environment production
 ```
 
-**Benefits**:
-- Total response time: ~3 seconds (vs. 7.6 seconds sequential)
-- Better user experience
-- Efficient resource utilization
+### Step 2: Create Automation Rules
 
-### Confidence Scoring
+See [Automation Rules Documentation](./automation-rules.md) for detailed setup instructions.
 
-Every AI response includes a **confidence score (0-100)**:
+#### Automatic Triage Rule
 
-- **80-100%**: High confidence (green indicator)
-- **60-80%**: Medium confidence (yellow indicator)
-- **0-60%**: Low confidence (red indicator)
+1. Go to Jira Settings → System → Automation
+2. Click "Create rule"
+3. Select trigger: "Issue created"
+4. Add condition: Issue type is one of [Support Request, Bug, Task]
+5. Add condition: Assignee is empty
+6. Add action: "Invoke Rovo Agent"
+   - Agent: TriageNinja Rovo Agent
+   - Prompt: See template in `docs/automation-rule-templates/automatic-triage.json`
+7. Add action: "Edit issue"
+   - Update fields based on Rovo Agent output
+8. Name the rule: "TriageNinja - Auto-Triage New Tickets"
+9. Turn on the rule
 
-Users can make informed decisions based on AI confidence.
+#### Manual Triage Rule
 
-### Reasoning Transparency
+1. Go to Jira Settings → System → Automation
+2. Click "Create rule"
+3. Select trigger: "Issue updated"
+4. Add condition: Labels contains "run-ai-triage"
+5. Add action: "Invoke Rovo Agent"
+   - Agent: TriageNinja Rovo Agent
+   - Prompt: See template in `docs/automation-rule-templates/manual-triage.json`
+6. Add action: "Edit issue"
+   - Update fields based on Rovo Agent output
+7. Add action: "Edit issue"
+   - Remove label "run-ai-triage"
+8. Name the rule: "TriageNinja - Manual Triage on Label"
+9. Turn on the rule
 
-All AI recommendations include **detailed reasoning**:
+### Step 3: Verify Setup
+
+1. Create a test ticket
+2. Check if automatic triage runs
+3. Verify ticket fields are updated
+4. Test manual triage by clicking "Run AI Triage" button
+5. Check Forge logs: `forge logs --environment production --tail`
+
+## Troubleshooting
+
+### Automation Rule Not Triggering
+
+**Symptoms**: New tickets are not being triaged automatically
+
+**Solutions**:
+1. Check if automation rule is enabled
+2. Verify conditions match your ticket types
+3. Check Jira Automation audit log for errors
+4. Verify Rovo Agent is available
+
+### Rovo Agent Not Responding
+
+**Symptoms**: Automation runs but fields are not updated
+
+**Solutions**:
+1. Check Rovo Agent status in Atlassian admin
+2. Verify smart value paths in automation rule
+3. Check Forge logs for action invocation errors
+4. Test actions manually using Forge CLI
+
+### Manual Triage Not Working
+
+**Symptoms**: Button click does not trigger triage
+
+**Solutions**:
+1. Check browser console for errors
+2. Verify label "run-ai-triage" is added to ticket
+3. Check if automation rule is triggered (audit log)
+4. Verify label is removed after completion
+5. Check Forge logs for resolver errors
+
+### Fallback Always Used
+
+**Symptoms**: System always uses keyword-based triage
+
+**Solutions**:
+1. Verify Rovo Agent is properly configured
+2. Check automation rules are enabled
+3. Verify Forge app has correct permissions
+4. Check network connectivity to Rovo Agent
+
+## Monitoring
+
+### Metrics to Track
+
+1. **Success Rate**: Percentage of successful Rovo Agent calls
+2. **Fallback Rate**: Percentage of times fallback is used
+3. **Average Confidence**: Average confidence score from AI
+4. **Response Time**: Time taken for triage to complete
+
+### Viewing Metrics
+
+Metrics are logged hourly to Forge logs:
+
+```bash
+forge logs --environment production | grep "\[Metrics\]"
+```
+
+### Example Metrics Output
 
 ```json
 {
-  "reasoning": "This appears to be a frontend rendering issue based on the symptoms described. The blank screen and browser console errors indicate a JavaScript error during page load. Sarah Chen has the highest expertise in React and authentication issues, with a 95% success rate in similar cases."
+  "timestamp": "2025-12-21T10:00:00Z",
+  "rovoAgent": {
+    "totalCalls": 150,
+    "successful": 142,
+    "failed": 8,
+    "successRate": "94.67%"
+  },
+  "fallback": {
+    "totalUsage": 8,
+    "fallbackRate": "5.06%",
+    "reasons": {
+      "timeout": 3,
+      "network-error": 2,
+      "service-unavailable": 3
+    }
+  },
+  "confidence": {
+    "average": "87.45",
+    "samples": 142
+  }
 }
 ```
 
-### Fallback Mechanisms
+## Best Practices
 
-When Rovo Agent is unavailable or returns errors:
+### Prompt Engineering
 
-1. **Mock AI Mode**: Uses rule-based logic for basic triage
-2. **Error Handling**: Graceful degradation with user notification
-3. **Retry Logic**: Automatic retry with exponential backoff
+1. **Be Specific**: Clearly define expected output format
+2. **Provide Context**: Include ticket details and historical data
+3. **Use Examples**: Show expected JSON structure
+4. **Handle Edge Cases**: Account for missing or invalid data
+5. **Iterate**: Refine prompts based on results
 
----
+### Performance Optimization
 
-## Prompt Engineering Techniques
+1. **Batch Processing**: Process multiple tickets in parallel when possible
+2. **Caching**: Cache agent workload data for short periods
+3. **Timeout Handling**: Set appropriate timeouts for Rovo Agent calls
+4. **Fallback Strategy**: Always have a fallback mechanism
 
-### 1. Structured Prompts
+### Security Considerations
 
-```
-You are TriageNinja, an AI assistant specialized in Jira ticket triage.
+1. **Input Validation**: Always validate input data
+2. **Sanitize Logs**: Remove sensitive information from logs
+3. **Access Control**: Use appropriate Jira permissions
+4. **Rate Limiting**: Implement rate limiting for API calls
 
-Your capabilities:
-1. Classify tickets into categories and subcategories
-2. Determine priority (High/Medium/Low) and urgency (Urgent/Normal)
-3. Suggest optimal assignees based on skills and workload
-4. Find similar past tickets and their solutions
+## Related Documentation
 
-When analyzing tickets:
-- Consider the summary and description carefully
-- Look for keywords indicating urgency or priority
-- Match categories based on technical domains
-- Provide confidence scores (0-100)
-- Always explain your reasoning
-
-Respond in JSON format as specified.
-```
-
-### 2. Few-Shot Learning
-
-Prompts include examples of expected input/output:
-
-```
-Example:
-Input: "Login page not loading"
-Output: {
-  "category": "Technical Issue",
-  "subCategory": "Frontend",
-  "priority": "High",
-  "confidence": 92
-}
-```
-
-### 3. Context Injection
-
-Prompts include relevant context:
-- Available team members and skills
-- Historical resolution data
-- Project-specific terminology
-- Current workload information
-
-### 4. Output Validation
-
-All AI responses are validated:
-- JSON schema validation
-- Required field checks
-- Confidence threshold enforcement
-- Fallback on validation failure
-
----
-
-## Performance Metrics
-
-### Response Times
-
-| Task | Average | P95 | P99 |
-|------|---------|-----|-----|
-| Classification | 2.5s | 2.8s | 3.2s |
-| Assignee Matching | 2.8s | 3.1s | 3.5s |
-| Similar Tickets | 2.3s | 2.6s | 3.0s |
-| **Parallel (All)** | **3.0s** | **3.3s** | **3.8s** |
-
-### Accuracy
-
-| Task | Accuracy | Confidence Avg |
-|------|----------|----------------|
-| Classification | 92% | 87% |
-| Assignee Matching | 88% | 84% |
-| Similar Tickets | 94% | 91% |
-| **Overall** | **91%** | **87%** |
-
-### User Satisfaction
-
-- **Time Saved**: 80% reduction (from 5-10 min to < 1 min)
-- **Accuracy**: 90%+ match with human expert decisions
-- **Adoption**: High user acceptance due to transparency
-
----
-
-## Testing
-
-### Unit Tests
-
-```bash
-npm test src/services/__tests__/rovoAgent.test.ts
-```
-
-**Coverage**:
-- `classifyTicket()`: 100%
-- `suggestAssignee()`: 100%
-- `findSimilarTickets()`: 100%
-- Error handling: 100%
-- Fallback logic: 100%
-
-### Integration Tests
-
-- Rovo Agent API calls
-- Parallel execution
-- Error scenarios
-- Timeout handling
-
-### E2E Tests
-
-```bash
-npx playwright test e2e/triage-flow.spec.ts
-```
-
-- Complete triage workflow
-- AI analysis results
-- Apply recommendations
-- User interactions
-
----
-
-## Manifest Configuration
-
-```yaml
-rovo:agent:
-  - key: triageninja-agent
-    name: TriageNinja AI Agent
-    description: AI-powered ticket triage assistant
-    prompt: |
-      You are TriageNinja, an AI assistant specialized in Jira ticket triage.
-      [Full prompt in manifest.yml]
-```
-
----
-
-## Best Practices Demonstrated
-
-### 1. Multi-Task Architecture
-
-✅ Three independent AI tasks  
-✅ Parallel execution for performance  
-✅ Task-specific prompts and validation
-
-### 2. Prompt Engineering
-
-✅ Structured prompts with clear instructions  
-✅ Few-shot learning examples  
-✅ Context injection  
-✅ Output format specification
-
-### 3. User Experience
-
-✅ Confidence scoring for transparency  
-✅ Reasoning explanation for trust  
-✅ Fast response times (< 3s)  
-✅ Graceful error handling
-
-### 4. Production Readiness
-
-✅ Comprehensive testing  
-✅ Error handling and fallbacks  
-✅ Performance monitoring  
-✅ Security best practices
-
----
-
-## Why TriageNinja Excels in AI Integration
-
-### 1. Advanced Rovo Usage
-
-- **Multiple AI Tasks**: 3 distinct tasks (classification, matching, search)
-- **Parallel Execution**: Optimal performance with concurrent tasks
-- **Sophisticated Prompts**: Context-aware, structured prompts
-
-### 2. Real Business Value
-
-- **80% Time Reduction**: Measurable productivity improvement
-- **90%+ Accuracy**: Matches human expert decisions
-- **Scalable**: Handles hundreds of tickets daily
-
-### 3. Technical Excellence
-
-- **Performance**: < 3 seconds total response time
-- **Reliability**: Fallback mechanisms and error handling
-- **Testing**: Comprehensive unit, integration, and E2E tests
-
-### 4. Innovation
-
-- **Confidence Scoring**: Transparent AI decision-making
-- **Reasoning Explanation**: Builds user trust
-- **Workload Balancing**: Considers team capacity
-
----
-
-## Future Enhancements
-
-### Short-term
-
-- [ ] Custom category training
-- [ ] Multi-language support
-- [ ] Advanced analytics
-
-### Long-term
-
-- [ ] Auto-triage mode (high confidence tickets)
-- [ ] Feedback loop for continuous learning
-- [ ] Integration with Slack/Teams
-
----
-
-## Conclusion
-
-TriageNinja demonstrates **best-in-class Rovo Agent integration** with:
-
-✅ Multiple AI tasks working in harmony  
-✅ Advanced prompt engineering  
-✅ Real-world business impact  
-✅ Production-ready implementation  
-✅ Comprehensive testing and documentation
-
-**TriageNinja is the perfect example of what's possible with Atlassian Rovo Agent! 🥷🤖**
-
----
-
-**Master the art of AI triage with TriageNinja 🥷**
+- [Automation Rules Setup](./automation-rules.md)
+- [Automation Rule Templates](./automation-rule-templates/)
+- [AI Triage Logic](./ai-triage-logic.md)
+- [Forge Documentation](https://developer.atlassian.com/platform/forge/)
+- [Rovo Agent Documentation](https://developer.atlassian.com/platform/rovo/)
