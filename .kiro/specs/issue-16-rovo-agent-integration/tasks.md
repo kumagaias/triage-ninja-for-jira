@@ -80,8 +80,6 @@
   - Document actions: Invoke Rovo Agent, Update issue, Remove label
   - Provide step-by-step setup instructions
   - _Requirements: 1.1, 2.1_
-  - Provide step-by-step setup instructions
-  - _Requirements: 1.1, 2.1_
 
 - [ ] 2.3 Create automation rule templates
   - Create JSON templates for both rules
