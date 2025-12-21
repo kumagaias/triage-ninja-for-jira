@@ -73,11 +73,13 @@
   - Provide step-by-step setup instructions
   - _Requirements: 1.1, 2.1_
 
-- [ ] 2.2 Document manual triage automation rule
+- [x] 2.2 Document manual triage automation rule
   - Add to docs/automation-rules.md
   - Document trigger: Issue Updated (label added)
   - Document conditions: Label "run-ai-triage" added
   - Document actions: Invoke Rovo Agent, Update issue, Remove label
+  - Provide step-by-step setup instructions
+  - _Requirements: 1.1, 2.1_
   - Provide step-by-step setup instructions
   - _Requirements: 1.1, 2.1_
 
