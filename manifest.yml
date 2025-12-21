@@ -104,7 +104,7 @@ modules:
       handler: index.issuePanelHandler
     - key: auto-triage-resolver
       handler: index.runAutoTriage
-    - key: change-assignee-resolver
+    - key: change-assignee
       handler: index.changeAssignee
     - key: analyze-classification
       handler: index.analyzeTicketClassification
