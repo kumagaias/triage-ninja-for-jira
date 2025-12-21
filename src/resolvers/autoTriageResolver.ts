@@ -64,8 +64,8 @@ export async function runAutoTriage(req: any) {
     });
     
     const updateResponse = await JiraClient.updateIssue(issueKey, {
-      assignee: { accountId: assigneeSuggestion.recommendation.accountId },
-      priority: { name: newPriority },
+      assignee: { accountId: assigneeSuggestion.recommendation.accountId } as any,
+      priority: { name: newPriority } as any,
       labels: [...new Set([...existingLabels, `category:${category}`, 'ai-triaged'])]
     });
     
