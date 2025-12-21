@@ -1,0 +1,67 @@
+{
+  "name": "TriageNinja - Manual Triage on Label",
+  "description": "Trigger AI triage on-demand when a user adds the 'run-ai-triage' label",
+  "trigger": {
+    "type": "issue.updated",
+    "description": "Triggers when an issue is updated"
+  },
+  "conditions": [
+    {
+      "type": "issue.fields.condition",
+      "field": "labels",
+      "operator": "contains",
+      "value": "run-ai-triage",
+      "description": "Only process when the trigger label is added"
+    }
+  ],
+  "actions": [
+    {
+      "type": "rovo.agent.invoke",
+      "agent": "TriageNinja Rovo Agent",
+      "prompt": "Analyze this ticket and provide triage recommendations.\n\nUse the following actions to gather information:\n1. analyze-ticket-classification - Get ticket details and context\n2. suggest-ticket-assignee - Get available agents and workload\n3. find-similar-tickets - Find similar resolved tickets\n\nBased on the analysis, provide:\n- Category and subcategory\n- Priority (High/Medium/Low)\n- Urgency (Urgent/Normal)\n- Suggested assignee with reasoning\n- Confidence score (0-100)\n\nReturn results in JSON format:\n{\n  \"category\": \"string\",\n  \"subCategory\": \"string\",\n  \"priority\": \"High|Medium|Low\",\n  \"urgency\": \"Urgent|Normal\",\n  \"assignee\": {\n    \"accountId\": \"string\",\n    \"displayName\": \"string\",\n    \"reasoning\": \"string\"\n  },\n  \"confidence\": number,\n  \"tags\": [\"string\"]\n}",
+      "description": "Invoke Rovo Agent to analyze the ticket"
+    },
+    {
+      "type": "issue.edit",
+      "fields": {
+        "assignee": "{{rovoOutput.assignee.accountId}}",
+        "priority": {
+          "mapping": {
+            "High": "High",
+            "Medium": "Medium",
+            "Low": "Low"
+          },
+          "source": "{{rovoOutput.priority}}"
+        },
+        "labels": {
+          "add": [
+            "ai-triaged",
+            "ai-category:{{rovoOutput.category}}",
+            "ai-subcategory:{{rovoOutput.subCategory}}",
+            "ai-confidence:{{rovoOutput.confidence}}"
+          ]
+        }
+      },
+      "description": "Update issue fields based on Rovo Agent recommendations"
+    },
+    {
+      "type": "issue.edit",
+      "fields": {
+        "labels": {
+          "remove": [
+            "run-ai-triage"
+          ]
+        }
+      },
+      "description": "Remove trigger label to signal completion to frontend"
+    }
+  ],
+  "notes": [
+    "This is a template configuration. Actual implementation requires Jira Automation UI.",
+    "Smart value paths (e.g., {{rovoOutput.assignee.accountId}}) may vary based on your Rovo Agent integration.",
+    "After creating the rule, check the Audit log to verify correct smart value paths.",
+    "The label removal action is critical for frontend polling to detect completion.",
+    "Frontend polls every 2 seconds for up to 30 seconds waiting for label removal.",
+    "Priority mapping may need adjustment based on your Jira priority scheme."
+  ]
+}
