@@ -1236,3 +1236,130 @@ export async function findSimilarTickets(payload: any, context: any) {
     );
   }
 }
+
+/**
+ * Add label to issue (Issue Panel Resolver)
+ * Adds a label to trigger manual triage automation
+ * 
+ * This resolver is called by the frontend "Run AI Triage" button.
+ * It adds the "run-ai-triage" label which triggers the Jira Automation rule.
+ * 
+ * @param payload - Contains issueKey and label
+ * @returns Success status
+ */
+issuePanelResolver.define('addLabelToIssue', async (req) => {
+  const timestamp = new Date().toISOString();
+  const payload = req.payload as { issueKey: string; label: string };
+  const { issueKey, label } = payload;
+  
+  // Log action invocation
+  console.log('[addLabelToIssue] Resolver invoked', {
+    timestamp,
+    issueKey,
+    label,
+    accountId: req.context?.accountId || 'unknown'
+  });
+  
+  try {
+    // Validate inputs
+    if (!issueKey || typeof issueKey !== 'string') {
+      const error = 'Invalid input: issueKey is required and must be a string';
+      console.error('[addLabelToIssue] Validation error:', {
+        timestamp,
+        error,
+        receivedIssueKey: issueKey
+      });
+      throw new Error(error);
+    }
+    
+    if (!label || typeof label !== 'string') {
+      const error = 'Invalid input: label is required and must be a string';
+      console.error('[addLabelToIssue] Validation error:', {
+        timestamp,
+        error,
+        receivedLabel: label
+      });
+      throw new Error(error);
+    }
+    
+    // Get current issue to retrieve existing labels
+    const issueResponse = await JiraClient.getIssue(issueKey);
+    if (!issueResponse.ok || !issueResponse.data) {
+      const error = `Failed to fetch issue: ${issueResponse.error || 'Unknown error'}`;
+      console.error('[addLabelToIssue] Issue fetch error:', {
+        timestamp,
+        issueKey,
+        error: issueResponse.error,
+        statusCode: issueResponse.status
+      });
+      throw new Error(error);
+    }
+    
+    const existingLabels = issueResponse.data.fields.labels || [];
+    
+    // Check if label already exists
+    if (existingLabels.includes(label)) {
+      console.log('[addLabelToIssue] Label already exists', {
+        timestamp,
+        issueKey,
+        label
+      });
+      return {
+        success: true,
+        message: 'Label already exists on issue',
+        alreadyExists: true
+      };
+    }
+    
+    // Add the new label to existing labels
+    const updatedLabels = [...existingLabels, label];
+    
+    // Update issue with new labels
+    const updateResponse = await JiraClient.updateIssue(issueKey, {
+      labels: updatedLabels
+    });
+    
+    if (!updateResponse.ok) {
+      const error = `Failed to add label: ${updateResponse.error || 'Unknown error'}`;
+      console.error('[addLabelToIssue] Update error:', {
+        timestamp,
+        issueKey,
+        label,
+        error: updateResponse.error,
+        statusCode: updateResponse.status
+      });
+      throw new Error(error);
+    }
+    
+    // Log successful response
+    console.log('[addLabelToIssue] Success', {
+      timestamp,
+      issueKey,
+      label,
+      totalLabels: updatedLabels.length
+    });
+    
+    return {
+      success: true,
+      message: 'Label added successfully'
+    };
+    
+  } catch (error) {
+    // Log error with full context
+    console.error('[addLabelToIssue] Error:', {
+      timestamp,
+      issueKey,
+      label,
+      errorType: error instanceof Error ? error.name : 'UnknownError',
+      errorMessage: error instanceof Error ? error.message : String(error),
+      stack: error instanceof Error ? error.stack : undefined
+    });
+    
+    // Return user-friendly error message
+    throw new Error(
+      `Failed to add label to ${issueKey}: ${
+        error instanceof Error ? error.message : 'Unknown error'
+      }`
+    );
+  }
+});

@@ -81,19 +81,19 @@
   - Provide step-by-step setup instructions
   - _Requirements: 1.1, 2.1_
 
-- [ ] 2.3 Create automation rule templates
+- [x] 2.3 Create automation rule templates
   - Create JSON templates for both rules
   - Include all necessary fields and configurations
   - Add comments explaining each section
   - _Requirements: 1.1, 2.1_
 
-- [ ] 3. Update frontend for manual triage trigger
+- [x] 3. Update frontend for manual triage trigger
   - Modify issue panel UI to trigger automation
   - Implement polling mechanism for completion
   - Add error handling and fallback logic
   - _Requirements: 1.1, 2.1, 4.1, 4.2, 4.3_
 
-- [ ] 3.1 Create addLabelToIssue resolver function
+- [x] 3.1 Create addLabelToIssue resolver function
   - Add function to src/index.ts
   - Accept issueKey and label parameters
   - Call Jira API to add label
@@ -101,7 +101,7 @@
   - Add error handling
   - _Requirements: 4.1, 4.4, 5.1, 5.2, 5.3_
 
-- [ ] 3.2 Update "Run AI Triage" button handler
+- [x] 3.2 Update "Run AI Triage" button handler
   - Modify static/issue-panel/src/App.js
   - Call addLabelToIssue resolver with "run-ai-triage" label
   - Show loading state while processing
@@ -109,14 +109,14 @@
   - Refresh issue data after completion
   - _Requirements: 1.1, 2.1, 4.1_
 
-- [ ] 3.3 Implement polling mechanism
+- [x] 3.3 Implement polling mechanism
   - Create pollForTriageCompletion function
   - Poll every 2 seconds for label removal
   - Timeout after 30 seconds
   - Return success when label is removed
   - _Requirements: 4.2_
 
-- [ ] 3.4 Add fallback error handling
+- [x] 3.4 Add fallback error handling
   - Catch errors from automation trigger
   - Log error details
   - Fall back to keyword-based triage

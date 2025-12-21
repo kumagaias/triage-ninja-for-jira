@@ -84,7 +84,7 @@ function App() {
     };
   }, []);
 
-  // Run AI triage analysis with timeout and progress
+  // Run AI triage analysis with label-based automation trigger
   const handleRunTriage = async () => {
     // Defensive check: ensure issueDetails is loaded
     if (!issueDetails) {
@@ -102,60 +102,69 @@ function App() {
     if (timeoutIdRef.current) clearTimeout(timeoutIdRef.current);
     if (progressResetTimeoutRef.current) clearTimeout(progressResetTimeoutRef.current);
     
-    // Non-linear progress simulation with easing
-    // Progress reaches 90% over 27 seconds, leaving 3 seconds buffer
-    const startTime = Date.now();
-    const duration = 27000; // 27 seconds to reach 90%
-    
-    progressIntervalRef.current = setInterval(() => {
-      if (isCancelledRef.current) {
-        clearInterval(progressIntervalRef.current);
-        return;
-      }
-      
-      const elapsed = Date.now() - startTime;
-      const ratio = Math.min(elapsed / duration, 1);
-      // Ease-out cubic function for smooth deceleration
-      const easedRatio = 1 - Math.pow(1 - ratio, 3);
-      const newProgress = Math.min(Math.floor(easedRatio * 90), 90);
-      
-      setProgress(newProgress);
-      
-      if (newProgress >= 90) {
-        clearInterval(progressIntervalRef.current);
-      }
-    }, 100);
-    
-    // Timeout after 30 seconds
-    timeoutIdRef.current = setTimeout(() => {
-      if (isCancelledRef.current) return;
-      
-      isCancelledRef.current = true;
-      clearInterval(progressIntervalRef.current);
-      setLoading(false);
-      setProgress(0);
-      setError(t.analysisTimeout);
-    }, 30000);
-    
     try {
-      // Pass issue details to the AI triage function
-      const result = await invoke('runAITriage', {
+      // Step 1: Add "run-ai-triage" label to trigger automation
+      console.log('[AI Triage] Adding trigger label...');
+      await invoke('addLabelToIssue', {
         issueKey: issueDetails.key,
-        summary: issueDetails.summary,
-        description: issueDetails.description || '',
-        reporter: issueDetails.reporter?.displayName || 'Unknown',
-        created: issueDetails.created
+        label: 'run-ai-triage'
       });
+      
+      // Step 2: Start progress simulation
+      const startTime = Date.now();
+      const duration = 27000; // 27 seconds to reach 90%
+      
+      progressIntervalRef.current = setInterval(() => {
+        if (isCancelledRef.current) {
+          clearInterval(progressIntervalRef.current);
+          return;
+        }
+        
+        const elapsed = Date.now() - startTime;
+        const ratio = Math.min(elapsed / duration, 1);
+        // Ease-out cubic function for smooth deceleration
+        const easedRatio = 1 - Math.pow(1 - ratio, 3);
+        const newProgress = Math.min(Math.floor(easedRatio * 90), 90);
+        
+        setProgress(newProgress);
+        
+        if (newProgress >= 90) {
+          clearInterval(progressIntervalRef.current);
+        }
+      }, 100);
+      
+      // Step 3: Poll for completion (label removal)
+      const result = await pollForTriageCompletion(issueDetails.key);
       
       // Only process result if not cancelled
       if (!isCancelledRef.current) {
-        clearTimeout(timeoutIdRef.current);
         clearInterval(progressIntervalRef.current);
         setProgress(100);
-        setTriageResult(result);
+        
+        if (result.success) {
+          // Fetch updated issue details to get AI triage results
+          const updatedDetails = await invoke('getIssueDetails');
+          
+          // Extract triage results from labels and fields
+          const triageData = extractTriageResults(updatedDetails);
+          
+          setTriageResult(triageData);
+        } else {
+          // Fallback to direct AI triage if automation failed
+          console.log('[AI Triage] Automation failed, falling back to direct AI triage');
+          const fallbackResult = await invoke('runAITriage', {
+            issueKey: issueDetails.key,
+            summary: issueDetails.summary,
+            description: issueDetails.description || '',
+            reporter: issueDetails.reporter?.displayName || 'Unknown',
+            created: issueDetails.created
+          });
+          setTriageResult(fallbackResult);
+        }
+        
         setLoading(false);
         
-        // Store timeout ID for cleanup
+        // Reset progress after a short delay
         progressResetTimeoutRef.current = setTimeout(() => {
           if (!isCancelledRef.current) {
             setProgress(0);
@@ -165,14 +174,110 @@ function App() {
     } catch (err) {
       // Only show error if not cancelled
       if (!isCancelledRef.current) {
-        clearTimeout(timeoutIdRef.current);
         clearInterval(progressIntervalRef.current);
-        console.error('Failed to run AI triage:', err);
-        setError(t.analysisFailed);
-        setLoading(false);
-        setProgress(0);
+        console.error('[AI Triage] Error:', err);
+        
+        // Try fallback to direct AI triage
+        try {
+          console.log('[AI Triage] Attempting fallback to direct AI triage');
+          const fallbackResult = await invoke('runAITriage', {
+            issueKey: issueDetails.key,
+            summary: issueDetails.summary,
+            description: issueDetails.description || '',
+            reporter: issueDetails.reporter?.displayName || 'Unknown',
+            created: issueDetails.created
+          });
+          setTriageResult(fallbackResult);
+          setLoading(false);
+          setProgress(0);
+        } catch (fallbackErr) {
+          console.error('[AI Triage] Fallback also failed:', fallbackErr);
+          setError(t.analysisFailed);
+          setLoading(false);
+          setProgress(0);
+        }
       }
     }
+  };
+  
+  /**
+   * Poll for triage completion by checking if label is removed
+   * Polls every 2 seconds for up to 30 seconds
+   */
+  const pollForTriageCompletion = async (issueKey) => {
+    const maxAttempts = 15; // 30 seconds / 2 seconds per attempt
+    const pollInterval = 2000; // 2 seconds
+    
+    for (let attempt = 0; attempt < maxAttempts; attempt++) {
+      if (isCancelledRef.current) {
+        return { success: false, reason: 'cancelled' };
+      }
+      
+      // Wait before checking (except first attempt)
+      if (attempt > 0) {
+        await new Promise(resolve => setTimeout(resolve, pollInterval));
+      }
+      
+      try {
+        // Fetch current issue details
+        const details = await invoke('getIssueDetails');
+        
+        // Check if trigger label is removed
+        if (!details.labels.includes('run-ai-triage')) {
+          console.log('[AI Triage] Automation completed (label removed)');
+          return { success: true };
+        }
+        
+        console.log(`[AI Triage] Polling attempt ${attempt + 1}/${maxAttempts}...`);
+      } catch (err) {
+        console.error('[AI Triage] Polling error:', err);
+      }
+    }
+    
+    // Timeout
+    console.log('[AI Triage] Polling timeout');
+    return { success: false, reason: 'timeout' };
+  };
+  
+  /**
+   * Extract triage results from issue labels and fields
+   */
+  const extractTriageResults = (details) => {
+    // Extract category from labels
+    const categoryLabel = details.labels.find(l => l.startsWith('ai-category:'));
+    const category = categoryLabel ? 
+      categoryLabel.replace('ai-category:', '').replace(/-/g, ' ').replace(/\b\w/g, l => l.toUpperCase()) : 
+      'Uncategorized';
+    
+    const subCategoryLabel = details.labels.find(l => l.startsWith('ai-subcategory:'));
+    const subCategory = subCategoryLabel ? 
+      subCategoryLabel.replace('ai-subcategory:', '').replace(/-/g, ' ').replace(/\b\w/g, l => l.toUpperCase()) : 
+      'General';
+    
+    const confidenceLabel = details.labels.find(l => l.startsWith('ai-confidence:'));
+    const confidence = confidenceLabel ? 
+      parseInt(confidenceLabel.replace('ai-confidence:', '')) : 
+      75;
+    
+    return {
+      category,
+      subCategory,
+      priority: details.priority?.name || 'Medium',
+      urgency: 'Normal',
+      confidence,
+      reasoning: 'Automatically triaged by Jira Automation + Rovo Agent',
+      tags: [],
+      suggestedAssignee: {
+        name: details.assignee?.displayName || 'Unassigned',
+        id: details.assignee?.accountId || null,
+        reason: 'Assigned by automation',
+        estimatedTime: 'N/A',
+        confidence: confidence,
+        alternatives: []
+      },
+      similarTickets: [],
+      suggestedActions: []
+    };
   };
 
   // Show confirmation dialog
