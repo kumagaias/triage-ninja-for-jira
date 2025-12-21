@@ -47,6 +47,7 @@
           "add": [
             "ai-triaged",
             "ai-category:{{rovoOutput.category}}",
+            "ai-subcategory:{{rovoOutput.subCategory}}",
             "ai-confidence:{{rovoOutput.confidence}}"
           ]
         }

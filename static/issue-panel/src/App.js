@@ -207,30 +207,45 @@ function App() {
   const pollForTriageCompletion = async (issueKey) => {
     const maxAttempts = 15; // 30 seconds / 2 seconds per attempt
     const pollInterval = 2000; // 2 seconds
+    const initialDelay = 2000; // Wait 2 seconds before first check
+    let consecutiveErrors = 0;
+    const maxConsecutiveErrors = 3;
     
     for (let attempt = 0; attempt < maxAttempts; attempt++) {
       if (isCancelledRef.current) {
         return { success: false, reason: 'cancelled' };
       }
       
-      // Wait before checking (except first attempt)
-      if (attempt > 0) {
-        await new Promise(resolve => setTimeout(resolve, pollInterval));
-      }
+      // Wait before each check (including first attempt)
+      const delay = attempt === 0 ? initialDelay : pollInterval;
+      await new Promise(resolve => setTimeout(resolve, delay));
       
       try {
         // Fetch current issue details
         const details = await invoke('getIssueDetails');
         
+        // Reset error counter on successful fetch
+        consecutiveErrors = 0;
+        
+        // Ensure labels is an array
+        const labels = Array.isArray(details.labels) ? details.labels : [];
+        
         // Check if trigger label is removed
-        if (!details.labels.includes('run-ai-triage')) {
+        if (!labels.includes('run-ai-triage')) {
           console.log('[AI Triage] Automation completed (label removed)');
           return { success: true };
         }
         
         console.log(`[AI Triage] Polling attempt ${attempt + 1}/${maxAttempts}...`);
       } catch (err) {
+        consecutiveErrors++;
         console.error('[AI Triage] Polling error:', err);
+        
+        // If too many consecutive errors, give up early
+        if (consecutiveErrors >= maxConsecutiveErrors) {
+          console.error('[AI Triage] Too many consecutive polling errors, giving up');
+          return { success: false, reason: 'polling-error' };
+        }
       }
     }
     
@@ -243,20 +258,23 @@ function App() {
    * Extract triage results from issue labels and fields
    */
   const extractTriageResults = (details) => {
+    // Ensure labels is an array
+    const labels = Array.isArray(details.labels) ? details.labels : [];
+    
     // Extract category from labels
-    const categoryLabel = details.labels.find(l => l.startsWith('ai-category:'));
+    const categoryLabel = labels.find(l => l.startsWith('ai-category:'));
     const category = categoryLabel ? 
       categoryLabel.replace('ai-category:', '').replace(/-/g, ' ').replace(/\b\w/g, l => l.toUpperCase()) : 
       'Uncategorized';
     
-    const subCategoryLabel = details.labels.find(l => l.startsWith('ai-subcategory:'));
+    const subCategoryLabel = labels.find(l => l.startsWith('ai-subcategory:'));
     const subCategory = subCategoryLabel ? 
       subCategoryLabel.replace('ai-subcategory:', '').replace(/-/g, ' ').replace(/\b\w/g, l => l.toUpperCase()) : 
       'General';
     
-    const confidenceLabel = details.labels.find(l => l.startsWith('ai-confidence:'));
+    const confidenceLabel = labels.find(l => l.startsWith('ai-confidence:'));
     const confidence = confidenceLabel ? 
-      parseInt(confidenceLabel.replace('ai-confidence:', '')) : 
+      parseInt(confidenceLabel.replace('ai-confidence:', ''), 10) : 
       75;
     
     return {
