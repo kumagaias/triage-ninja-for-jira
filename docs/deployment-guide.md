@@ -7,7 +7,7 @@ This guide covers the deployment process for TriageNinja to Atlassian Forge envi
 ## Prerequisites
 
 - Forge CLI installed and authenticated (`forge login`)
-- Node.js 22.x or 24.x
+- Node.js 22.x (Forge runtime). You may use Node.js 24.x for local development, but your app runs on Node.js 22.x in Forge.
 - Access to Jira site for installation
 - All tests passing (`make test`)
 
@@ -226,7 +226,7 @@ forge install --upgrade --non-interactive \
 
 **Solutions**:
 1. Check `forge lint` output for errors
-2. Verify Node.js version (22.x or 24.x)
+2. Verify Node.js version matches Forge runtime (22.x)
 3. Check network connectivity
 4. Verify Forge CLI is up to date: `npm install -g @forge/cli@latest`
 
@@ -293,7 +293,7 @@ forge install --upgrade --non-interactive \
 
 ## Deployment History
 
-### Version 5.36.0 (2025-12-21)
+### Version 1.2.23 (2025-12-21)
 
 **Changes**:
 - Added metrics tracking for Rovo Agent usage
