@@ -52,10 +52,10 @@
       "autoApprove": []
     },
     "github": {
-      "command": "npx",
+      "command": "sh",
       "args": [
-        "-y",
-        "@modelcontextprotocol/server-github"
+        "-c",
+        "GITHUB_PERSONAL_ACCESS_TOKEN=$(gh auth token) npx -y @modelcontextprotocol/server-github"
       ],
       "disabled": false,
       "autoApprove": [
@@ -79,7 +79,8 @@
         "get_pull_request_comments",
         "get_pull_request_reviews",
         "update_issue",
-        "get_pull_request_files"
+        "get_pull_request_files",
+        "create_pull_request_review"
       ]
     }
   }
