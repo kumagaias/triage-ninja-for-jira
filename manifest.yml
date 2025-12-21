@@ -13,7 +13,7 @@ modules:
     - key: triageninja-issue-panel
       resource: issue-panel
       resolver:
-        function: issue-panel-resolver
+        function: auto-triage-resolver
       viewportSize: medium
       title: AI Triage
       icon: https://kumagaias.github.io/triage-ninja-for-jira/assets/triageninja-icon.png
@@ -102,6 +102,8 @@ modules:
       handler: index.dashboardHandler
     - key: issue-panel-resolver
       handler: index.issuePanelHandler
+    - key: auto-triage-resolver
+      handler: index.runAutoTriage
     - key: analyze-classification
       handler: index.analyzeTicketClassification
     - key: suggest-assignee
@@ -120,6 +122,7 @@ permissions:
     - read:jira-work
     - write:jira-work
     - read:jira-user
+    - storage:app
 app:
   runtime:
     name: nodejs22.x

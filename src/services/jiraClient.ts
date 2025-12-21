@@ -243,4 +243,59 @@ export class JiraClient {
       return this.handleApiError<{ key: string; id: string }>(error, 'create issue');
     }
   }
+
+  /**
+   * Add a comment to an issue
+   * @param issueIdOrKey - Issue key or ID
+   * @param commentBody - Comment text (supports Jira markdown)
+   * @returns Promise with success status or error
+   */
+  static async addComment(
+    issueIdOrKey: string,
+    commentBody: string
+  ): Promise<ApiResponse<void>> {
+    try {
+      const response = await api
+        .asUser()
+        .requestJira(route`/rest/api/3/issue/${issueIdOrKey}/comment`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            body: {
+              type: 'doc',
+              version: 1,
+              content: [
+                {
+                  type: 'paragraph',
+                  content: [
+                    {
+                      type: 'text',
+                      text: commentBody
+                    }
+                  ]
+                }
+              ]
+            }
+          }),
+        });
+
+      if (!response.ok) {
+        const errorData: JiraErrorResponse = await response.json();
+        return {
+          error: errorData,
+          status: response.status,
+          ok: false,
+        };
+      }
+
+      return {
+        status: response.status,
+        ok: true,
+      };
+    } catch (error) {
+      return this.handleApiError<void>(error, 'add comment');
+    }
+  }
 }

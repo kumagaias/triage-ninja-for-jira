@@ -11,6 +11,9 @@ export const translations = {
     creating: 'Creating...',
     testTicketsCreated: 'test tickets created',
     testTicketsFailed: 'Failed to create test tickets',
+    autoTriage: 'Auto-Triage',
+    on: 'ON',
+    off: 'OFF',
     
     // Statistics Cards
     untriaged: 'Untriaged',
@@ -68,6 +71,9 @@ export const translations = {
     creating: '作成中...',
     testTicketsCreated: '件のテストチケットを作成しました',
     testTicketsFailed: 'テストチケットの作成に失敗しました',
+    autoTriage: '自動トリアージ',
+    on: 'ON',
+    off: 'OFF',
     
     // Statistics Cards
     untriaged: '未処理',

@@ -1,4 +1,5 @@
 import Resolver from '@forge/resolver';
+import { storage } from '@forge/api';
 import { JiraClient } from '../services/jiraClient';
 import * as RovoAgent from '../services/rovoAgent';
 import { calculateUserWorkload } from '../utils/helpers';
@@ -381,6 +382,47 @@ dashboardResolver.define('applyTriageResult', async (req) => {
   } catch (error) {
     console.error('Error in applyTriageResult:', error);
     throw new Error('Failed to apply triage result. Please try again.');
+  }
+});
+
+/**
+ * Get auto-triage setting
+ * Returns whether automatic triage is enabled for the project
+ */
+dashboardResolver.define('getAutoTriageSetting', async (req) => {
+  const projectKey = req.context.extension.project.key;
+  const storageKey = `auto-triage-${projectKey}`;
+  
+  try {
+    const enabled = await storage.get(storageKey);
+    // Default to true if not set
+    return { enabled: enabled !== false };
+  } catch (error) {
+    console.error('Failed to get auto-triage setting:', error);
+    return { enabled: true };
+  }
+});
+
+/**
+ * Set auto-triage setting
+ * Enables or disables automatic triage for the project
+ */
+dashboardResolver.define('setAutoTriageSetting', async (req) => {
+  const projectKey = req.context.extension.project.key;
+  const payload = req.payload as { enabled: boolean };
+  const storageKey = `auto-triage-${projectKey}`;
+  
+  try {
+    await storage.set(storageKey, payload.enabled);
+    console.log(`[setAutoTriageSetting] Auto-triage ${payload.enabled ? 'enabled' : 'disabled'} for project ${projectKey}`);
+    
+    return {
+      success: true,
+      enabled: payload.enabled
+    };
+  } catch (error) {
+    console.error('Failed to set auto-triage setting:', error);
+    throw new Error('Failed to update auto-triage setting');
   }
 });
 

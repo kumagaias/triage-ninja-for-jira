@@ -84,7 +84,7 @@ function App() {
     };
   }, []);
 
-  // Run AI triage analysis with label-based automation trigger
+  // Run AI triage analysis - Direct resolver call (no automation needed)
   const handleRunTriage = async () => {
     // Defensive check: ensure issueDetails is loaded
     if (!issueDetails) {
@@ -103,16 +103,11 @@ function App() {
     if (progressResetTimeoutRef.current) clearTimeout(progressResetTimeoutRef.current);
     
     try {
-      // Step 1: Add "run-ai-triage" label to trigger automation
-      console.log('[AI Triage] Adding trigger label...');
-      await invoke('addLabelToIssue', {
-        issueKey: issueDetails.key,
-        label: 'run-ai-triage'
-      });
+      console.log('[AI Triage] Running auto triage...');
       
-      // Step 2: Start progress simulation
+      // Start progress simulation
       const startTime = Date.now();
-      const duration = 27000; // 27 seconds to reach 90%
+      const duration = 10000; // 10 seconds to reach 90%
       
       progressIntervalRef.current = setInterval(() => {
         if (isCancelledRef.current) {
@@ -133,8 +128,10 @@ function App() {
         }
       }, 100);
       
-      // Step 3: Poll for completion (label removal)
-      const result = await pollForTriageCompletion(issueDetails.key);
+      // Call the auto triage resolver directly
+      const result = await invoke('runAutoTriage', {
+        issueKey: issueDetails.key
+      });
       
       // Only process result if not cancelled
       if (!isCancelledRef.current) {
@@ -142,24 +139,19 @@ function App() {
         setProgress(100);
         
         if (result.success) {
-          // Fetch updated issue details to get AI triage results
-          const updatedDetails = await invoke('getIssueDetails');
-          
-          // Extract triage results from labels and fields
-          const triageData = extractTriageResults(updatedDetails);
-          
-          setTriageResult(triageData);
-        } else {
-          // Fallback to direct AI triage if automation failed
-          console.log('[AI Triage] Automation failed, falling back to direct AI triage');
-          const fallbackResult = await invoke('runAITriage', {
-            issueKey: issueDetails.key,
-            summary: issueDetails.summary,
-            description: issueDetails.description || '',
-            reporter: issueDetails.reporter?.displayName || 'Unknown',
-            created: issueDetails.created
+          // Show success message
+          setSuccessMessage({
+            priority: result.result.priority,
+            assignee: result.result.assignee.displayName,
+            category: result.result.category,
+            subCategory: result.result.category // Use same for now
           });
-          setTriageResult(fallbackResult);
+          
+          // Reload issue details
+          const updatedDetails = await invoke('getIssueDetails');
+          setIssueDetails(updatedDetails);
+        } else {
+          setError(result.error || t.analysisFailed);
         }
         
         setLoading(false);
@@ -176,26 +168,9 @@ function App() {
       if (!isCancelledRef.current) {
         clearInterval(progressIntervalRef.current);
         console.error('[AI Triage] Error:', err);
-        
-        // Try fallback to direct AI triage
-        try {
-          console.log('[AI Triage] Attempting fallback to direct AI triage');
-          const fallbackResult = await invoke('runAITriage', {
-            issueKey: issueDetails.key,
-            summary: issueDetails.summary,
-            description: issueDetails.description || '',
-            reporter: issueDetails.reporter?.displayName || 'Unknown',
-            created: issueDetails.created
-          });
-          setTriageResult(fallbackResult);
-          setLoading(false);
-          setProgress(0);
-        } catch (fallbackErr) {
-          console.error('[AI Triage] Fallback also failed:', fallbackErr);
-          setError(t.analysisFailed);
-          setLoading(false);
-          setProgress(0);
-        }
+        setError(t.analysisFailed);
+        setLoading(false);
+        setProgress(0);
       }
     }
   };

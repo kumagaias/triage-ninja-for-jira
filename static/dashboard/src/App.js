@@ -23,6 +23,8 @@ function App() {
   const [loadingStats, setLoadingStats] = useState(true);
   const [loadingTickets, setLoadingTickets] = useState(true);
   const [locale, setLocale] = useState('en');
+  const [autoTriageEnabled, setAutoTriageEnabled] = useState(true);
+  const [loadingAutoTriage, setLoadingAutoTriage] = useState(false);
   const [filters, setFilters] = useState({
     assignee: 'untriaged', // New filter: 'all' or 'untriaged'
     priority: 'all',
@@ -38,7 +40,7 @@ function App() {
   
   const t = getTranslations(locale);
 
-  // Get user locale on mount
+  // Get user locale and auto-triage setting on mount
   useEffect(() => {
     const getUserLocale = async () => {
       try {
@@ -50,7 +52,17 @@ function App() {
       }
     };
     
+    const getAutoTriageSetting = async () => {
+      try {
+        const result = await invoke('getAutoTriageSetting');
+        setAutoTriageEnabled(result.enabled);
+      } catch (err) {
+        console.error('Failed to get auto-triage setting:', err);
+      }
+    };
+    
     getUserLocale();
+    getAutoTriageSetting();
   }, []);
 
   // Fetch statistics on mount
@@ -148,6 +160,20 @@ function App() {
     border: isDarkMode ? '#38414A' : '#DFE1E6'
   };
   
+  // Handle auto-triage toggle
+  const handleAutoTriageToggle = async () => {
+    setLoadingAutoTriage(true);
+    try {
+      const newValue = !autoTriageEnabled;
+      await invoke('setAutoTriageSetting', { enabled: newValue });
+      setAutoTriageEnabled(newValue);
+    } catch (err) {
+      console.error('Failed to update auto-triage setting:', err);
+    } finally {
+      setLoadingAutoTriage(false);
+    }
+  };
+  
   return (
     <div style={{ 
       padding: '20px', 
@@ -202,6 +228,55 @@ function App() {
           }}>
             AI-Powered Ticket Triage for Jira
           </p>
+          
+          {/* Auto-Triage Toggle */}
+          <div style={{
+            marginTop: '15px',
+            display: 'flex',
+            alignItems: 'center',
+            gap: '10px'
+          }}>
+            <label style={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: '8px',
+              cursor: loadingAutoTriage ? 'not-allowed' : 'pointer',
+              opacity: loadingAutoTriage ? 0.6 : 1
+            }}>
+              <div
+                onClick={loadingAutoTriage ? undefined : handleAutoTriageToggle}
+                style={{
+                  width: '44px',
+                  height: '24px',
+                  backgroundColor: autoTriageEnabled ? '#36B37E' : 'rgba(255,255,255,0.3)',
+                  borderRadius: '12px',
+                  position: 'relative',
+                  transition: 'background-color 0.3s',
+                  cursor: loadingAutoTriage ? 'not-allowed' : 'pointer'
+                }}
+              >
+                <div style={{
+                  width: '20px',
+                  height: '20px',
+                  backgroundColor: 'white',
+                  borderRadius: '50%',
+                  position: 'absolute',
+                  top: '2px',
+                  left: autoTriageEnabled ? '22px' : '2px',
+                  transition: 'left 0.3s',
+                  boxShadow: '0 2px 4px rgba(0,0,0,0.2)'
+                }} />
+              </div>
+              <span style={{
+                color: 'white',
+                fontSize: '14px',
+                fontWeight: '500',
+                textShadow: '1px 1px 2px rgba(0,0,0,0.5)'
+              }}>
+                {t.autoTriage || 'Auto-Triage'}: {autoTriageEnabled ? (t.on || 'ON') : (t.off || 'OFF')}
+              </span>
+            </label>
+          </div>
         </div>
         <div style={{ zIndex: 1 }}>
           <TestTicketButton t={t} onTicketsCreated={() => window.location.reload()} />
