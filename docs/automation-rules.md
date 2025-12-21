@@ -76,7 +76,7 @@ This rule automatically triages new tickets when they are created.
 1. Click **Add action**
 2. Select **Invoke Rovo Agent** (under AI/Automation section)
 3. Configure:
-   - **Agent:** Select `TriageNinja AI Agent`
+   - **Agent:** Select `TriageNinja Rovo Agent`
    - **Prompt:**
      ```
      Analyze this ticket and provide triage recommendations.
@@ -114,16 +114,19 @@ This rule automatically triages new tickets when they are created.
 
 1. Click **Add action**
 2. Select **Edit issue**
-3. Configure fields to update:
-   - **Assignee:** `{{rovoAgent.assignee.accountId}}`
-   - **Priority:** Map from `{{rovoAgent.priority}}`
+3. Configure fields to update using the smart values returned by your Rovo Agent:
+   - **Assignee:** set to the assignee account ID from the Rovo Agent output (for example: `{{rovoOutput.assignee.accountId}}`)
+   - **Priority:** map from the priority value in the Rovo Agent output (for example: `{{rovoOutput.priority}}`)
      - High → Highest or High
      - Medium → Medium
      - Low → Low or Lowest
    - **Labels:** Add labels:
      - `ai-triaged`
-     - `ai-category:{{rovoAgent.category}}`
-     - `ai-confidence:{{rovoAgent.confidence}}`
+     - `ai-category:{{rovoOutput.category}}`
+     - `ai-confidence:{{rovoOutput.confidence}}`
+
+   > **Note:** The exact smart value paths (e.g. `{{rovoOutput.assignee.accountId}}`) depend on how Rovo Agent is integrated with your Jira site. After running the rule once, open the rule's **Audit log**, expand the **Invoke Rovo Agent** action, and use **Inspect smart values** (or view the response payload) to copy the correct variable paths for your instance.
+
 4. Click **Save**
 
 #### Step 6: Name and Activate Rule
@@ -270,39 +273,41 @@ Allow users to correct AI decisions:
 
 ## Advanced Configuration
 
+> **Note:** The following examples show conceptual configuration using pseudo-code. Jira Automation rules are configured through the UI, not YAML files. Use these as a guide for what to configure in the UI.
+
 ### Custom Field Mapping
 
-If you use custom fields for category/priority:
+If you use custom fields for category/priority, configure in the **Edit issue** action:
 
-```yaml
-# In Edit Issue action
-customfield_10001: "{{rovoAgent.category}}"
-customfield_10002: "{{rovoAgent.subCategory}}"
+```
+# Example configuration (configure in UI)
+customfield_10001: "{{rovoOutput.category}}"
+customfield_10002: "{{rovoOutput.subCategory}}"
 ```
 
 ### Conditional Updates
 
-Only update priority if confidence is high:
+Only update priority if confidence is high by adding a condition before the **Edit issue** action:
 
-```yaml
-# Add condition before Edit Issue action
-Condition: {{rovoAgent.confidence}} > 80
+```
+# Example condition (configure in UI)
+Condition: {{rovoOutput.confidence}} > 80
 ```
 
 ### Notification
 
-Send notification when AI triages a ticket:
+Send notification when AI triages a ticket by adding a **Send email** action:
 
-```yaml
-# Add Send email action
+```
+# Example email configuration (configure in UI)
 To: {{issue.assignee.emailAddress}}
 Subject: "New ticket assigned: {{issue.key}}"
 Body: |
   You've been assigned a new ticket by TriageNinja AI.
   
   Ticket: {{issue.key}} - {{issue.summary}}
-  Category: {{rovoAgent.category}}
-  Confidence: {{rovoAgent.confidence}}%
+  Category: {{rovoOutput.category}}
+  Confidence: {{rovoOutput.confidence}}%
   
   View ticket: {{issue.url}}
 ```
@@ -313,16 +318,14 @@ After setting up automatic triage:
 
 1. ✅ Test with sample tickets
 2. ✅ Monitor for 1-2 weeks
-3. ✅ Set up **Manual Triage** rule (see next section)
+3. ✅ Set up **Manual Triage** rule (documented separately)
 4. ✅ Train team on new workflow
 5. ✅ Gather feedback and iterate
 
 ## Related Documentation
 
-- [Manual Triage Automation Rule](./automation-rules.md#rule-2-manual-triage)
-- [Rovo Agent Integration Guide](./rovo-agent-integration.md)
-- [Prompt Engineering Guide](./prompt-engineering.md)
-- [Troubleshooting Guide](./troubleshooting.md)
+- Manual Triage Automation Rule (coming soon)
+- [Rovo Agent Integration Guide](./rovo-integration.md)
 
 ## Support
 
@@ -331,5 +334,5 @@ If you encounter issues:
 1. Check [Troubleshooting](#troubleshooting) section
 2. Review Forge logs: `forge logs --tail`
 3. Check Jira Automation audit log
-4. Contact support: support@triageninja.com
+4. Contact your Jira administrator or internal support team
 5. Report issues: [GitHub Issues](https://github.com/kumagaias/triage-ninja-for-jira/issues)
