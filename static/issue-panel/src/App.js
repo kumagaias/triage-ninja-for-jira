@@ -22,11 +22,9 @@ function App() {
   console.log('[AI Triage] Component mounted');
   
   const [issueDetails, setIssueDetails] = useState(null);
-  const [triageResult, setTriageResult] = useState(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
   const [successMessage, setSuccessMessage] = useState(null);
-  const [showConfirmDialog, setShowConfirmDialog] = useState(false);
   const [progress, setProgress] = useState(0);
   const [locale, setLocale] = useState('en');
   
@@ -274,59 +272,6 @@ function App() {
     };
   };
 
-  // Show confirmation dialog
-  const handleApproveClick = () => {
-    setShowConfirmDialog(true);
-  };
-
-  // Handle approve action after confirmation
-  const handleApproveConfirm = async () => {
-    setShowConfirmDialog(false);
-    setLoading(true);
-    setError(null);
-    
-    try {
-      await invoke('applyTriageResult', {
-        issueKey: issueDetails.key,
-        priority: triageResult.priority,
-        assigneeId: triageResult.suggestedAssignee.id,
-        category: triageResult.category,
-        subCategory: triageResult.subCategory
-      });
-      
-      // Show success message
-      setSuccessMessage({
-        priority: triageResult.priority,
-        assignee: triageResult.suggestedAssignee.name,
-        category: triageResult.category,
-        subCategory: triageResult.subCategory
-      });
-      
-      // Clear the result
-      setTriageResult(null);
-      
-      // Reload issue details in the panel
-      const details = await invoke('getIssueDetails');
-      setIssueDetails(details);
-    } catch (err) {
-      console.error('Failed to apply triage result:', err);
-      setError(t.applyFailed);
-    } finally {
-      setLoading(false);
-    }
-  };
-  
-  // Cancel confirmation dialog
-  const handleApproveCancel = () => {
-    setShowConfirmDialog(false);
-  };
-
-  // Handle reject action
-  const handleReject = () => {
-    // Clear the triage result and allow user to run again
-    setTriageResult(null);
-  };
-  
   // Handle assignee change
   const handleChangeAssignee = async (accountId, displayName) => {
     if (!issueDetails) return;
@@ -482,164 +427,6 @@ function App() {
         </div>
       )}
 
-      {triageResult && (
-        <div className="triage-result">
-          {/* Confidence Score */}
-          <div className={`confidence-box ${getConfidenceClass(triageResult.confidence)}`}>
-            <div className="confidence-label">
-              {t.confidenceScore}
-            </div>
-            <div className="confidence-value">
-              {triageResult.confidence}%
-            </div>
-          </div>
-
-          {/* Category */}
-          <div className="section">
-            <h3 className="section-title">
-              📁 {t.category}
-            </h3>
-            <div className="category-box">
-              <span className="category-primary">
-                {triageResult.category}
-              </span>
-              <span className="category-separator">›</span>
-              <span className="category-secondary">
-                {triageResult.subCategory}
-              </span>
-            </div>
-          </div>
-
-          {/* Priority & Urgency */}
-          <div className="section">
-            <h3 className="section-title">
-              ⚡ {t.priorityAndUrgency}
-            </h3>
-            <div className="priority-urgency-container">
-              <div className="priority-urgency-box">
-                <div className="priority-urgency-label">{t.priority}</div>
-                <div className="priority-urgency-value">{triageResult.priority}</div>
-              </div>
-              <div className="priority-urgency-box">
-                <div className="priority-urgency-label">{t.urgency}</div>
-                <div className="priority-urgency-value">{triageResult.urgency}</div>
-              </div>
-            </div>
-          </div>
-
-          {/* Suggested Assignee */}
-          <div className="section">
-            <h3 className="section-title">
-              👤 {t.suggestedAssignee}
-            </h3>
-            <div className="assignee-box">
-              <div className="assignee-name">
-                {triageResult.suggestedAssignee.name}
-              </div>
-              <div className="assignee-reason">
-                ✓ {triageResult.suggestedAssignee.reason}
-              </div>
-              <div className="assignee-time">
-                ⏱️ {t.avgResolution}: {triageResult.suggestedAssignee.estimatedTime}
-              </div>
-            </div>
-          </div>
-
-          {/* Similar Tickets */}
-          {triageResult.similarTickets && triageResult.similarTickets.length > 0 && (
-            <div className="section">
-              <h3 className="section-title">
-                🔍 {t.similarTickets} ({triageResult.similarTickets.length})
-              </h3>
-              {triageResult.similarTickets.slice(0, 3).map((ticket, index) => (
-                <div key={index} className="similar-ticket">
-                  <div className="similar-ticket-header">
-                    {ticket.id} 
-                    <span className="similarity-badge">
-                      {Math.round(ticket.similarity * 100)}% {t.similar}
-                    </span>
-                  </div>
-                  <div className="similar-ticket-solution">
-                    {ticket.solution}
-                  </div>
-                </div>
-              ))}
-            </div>
-          )}
-
-          {/* Reasoning */}
-          {triageResult.reasoning && (
-            <div className="section">
-              <h3 className="section-title">
-                💡 {t.reasoning}
-              </h3>
-              <div className="reasoning-box">
-                {triageResult.reasoning}
-              </div>
-            </div>
-          )}
-
-          {/* Action Buttons */}
-          <div className="action-buttons" aria-live="polite">
-            <button
-              onClick={handleApproveClick}
-              disabled={loading}
-              className="approve-button"
-              aria-busy={loading}
-            >
-              {loading ? t.applying : t.approveAndApply}
-            </button>
-            <button
-              onClick={handleReject}
-              disabled={loading}
-              className="reject-button"
-            >
-              {t.reject}
-            </button>
-          </div>
-        </div>
-      )}
-      
-      {/* Confirmation Dialog */}
-      {showConfirmDialog && triageResult && (
-        <div 
-          role="dialog"
-          aria-modal="true"
-          aria-labelledby="confirm-dialog-title"
-          className="dialog-overlay">
-          <div className="dialog-content">
-            <h3 
-              id="confirm-dialog-title"
-              className="dialog-title">
-              {t.confirmTriageApplication}
-            </h3>
-            <p className="dialog-text">
-              {t.confirmApplyChanges}
-            </p>
-            <ul className="dialog-list">
-              <li>{t.priority}: <strong>{triageResult?.priority || 'N/A'}</strong></li>
-              <li>{t.assignee}: <strong>{triageResult?.suggestedAssignee?.name || 'N/A'}</strong></li>
-              <li>{t.labels}: <strong>{triageResult?.category || 'N/A'}, {triageResult?.subCategory || 'N/A'}</strong></li>
-            </ul>
-            <div className="dialog-buttons">
-              <button
-                onClick={handleApproveCancel}
-                aria-label="Cancel triage application"
-                className="dialog-cancel-button"
-              >
-                {t.cancel}
-              </button>
-              <button
-                onClick={handleApproveConfirm}
-                aria-label="Confirm triage application"
-                className="dialog-confirm-button"
-              >
-                {t.confirm}
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
     </div>
   );
 }
