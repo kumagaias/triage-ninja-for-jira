@@ -1,6 +1,6 @@
 {
   "name": "jira-issue-panel-custom-ui-static",
-  "version": "0.2.47",
+  "version": "7.0.0",
   "private": true,
   "homepage": ".",
   "dependencies": {
