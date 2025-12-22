@@ -292,7 +292,21 @@ dashboardResolver.define('createTestTickets', async (req) => {
       const fields: any = {
         project: { key: projectKey },
         summary: ticket.summary,
-        description: ticket.description,
+        description: {
+          type: 'doc',
+          version: 1,
+          content: [
+            {
+              type: 'paragraph',
+              content: [
+                {
+                  type: 'text',
+                  text: ticket.description
+                }
+              ]
+            }
+          ]
+        },
         issuetype: { name: 'Task' },
         priority: { name: getRandomPriority() }
       };
