@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { invoke, view, router, rovo } from '@forge/bridge';
+import { invoke, view, router } from '@forge/bridge';
 import { getTranslations } from './i18n';
 import './App.css';
 
@@ -29,7 +29,7 @@ function App() {
   const [loadingAutoTriage, setLoadingAutoTriage] = useState(false);
   const [sortConfig, setSortConfig] = useState({ key: 'created', direction: 'desc' });
   const [filters, setFilters] = useState({
-    assignee: 'all',
+    assignee: 'untriaged',
     status: 'open', // Default to 'open' tickets
     dateRange: 'all'
   });
@@ -801,7 +801,7 @@ function App() {
         fontSize: '12px',
         color: theme.textSecondary
       }}>
-        TriageNinja v6.42.0 (Production)
+        TriageNinja v6.43.0 (Production)
       </div>
     </div>
   );
@@ -1340,12 +1340,12 @@ function TicketRow({ ticket, t, theme, onTriageClick }) {
               onTriageClick();
             }}
             style={{
-              padding: '3px 8px',
+              padding: '6px 12px',
               backgroundColor: '#0052CC',
               color: 'white',
               border: 'none',
               borderRadius: '3px',
-              fontSize: '11px',
+              fontSize: '12px',
               cursor: 'pointer',
               fontWeight: '500'
             }}
@@ -1446,59 +1446,6 @@ function TicketRow({ ticket, t, theme, onTriageClick }) {
           }}
         >
           {t.triageButton}
-        </button>
-        
-        {/* Ask Rovo Button */}
-        <button
-          onClick={async (e) => {
-            e.stopPropagation();
-            console.log('[Rovo] Button clicked for ticket:', ticket.key);
-            
-            try {
-              console.log('[Rovo] Checking rovo API availability:', typeof rovo);
-              
-              if (!rovo || !rovo.open) {
-                console.error('[Rovo] API not available');
-                alert('Rovo API is not available. This feature requires Rovo to be enabled in your Atlassian site.');
-                return;
-              }
-              
-              console.log('[Rovo] Opening Rovo chat...');
-              await rovo.open({
-                type: "forge",
-                agentName: "TriageNinja AI Agent",
-                agentKey: "triageninja-agent",
-                prompt: `Please analyze and triage this ticket: ${ticket.key}
-
-Summary: ${ticket.fields.summary}
-Description: ${ticket.fields.description || 'No description'}
-
-Please provide:
-1. Category and subcategory classification
-2. Priority recommendation (High/Medium/Low)
-3. Suggested assignee based on team workload
-4. Confidence score for your recommendations`
-              });
-              console.log('[Rovo] Successfully opened Rovo chat');
-            } catch (error) {
-              console.error('[Rovo] Failed to open Rovo:', error);
-              alert(`Failed to open Rovo: ${error.message || 'Unknown error'}`);
-            }
-          }}
-          aria-label={`Ask Rovo about ${ticket.key}`}
-          style={{
-            padding: '6px 12px',
-            backgroundColor: '#6554C0',
-            color: 'white',
-            border: 'none',
-            borderRadius: '3px',
-            fontSize: '12px',
-            cursor: 'pointer',
-            fontWeight: '500',
-            transition: 'background-color 0.2s'
-          }}
-        >
-          🤖 Rovo
         </button>
       </div>
     </div>
