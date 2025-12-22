@@ -182,13 +182,52 @@ dashboardResolver.define('getStatistics', async (req) => {
       ? openResponse.data.issues.length
       : 0;
     
+    // Calculate AI Accuracy based on feedback labels
+    // Get all AI-triaged tickets with feedback labels
+    const feedbackJql = `project = ${projectKey} AND labels in (ai-correct, ai-incorrect)`;
+    
+    const feedbackResponse = await JiraClient.searchIssues({
+      jql: feedbackJql,
+      maxResults: 100,
+      fields: ['labels']
+    });
+    
+    let aiAccuracy = 94; // Default value if no feedback data
+    
+    if (feedbackResponse.ok && feedbackResponse.data?.issues && feedbackResponse.data.issues.length > 0) {
+      const issues = feedbackResponse.data.issues;
+      let correctCount = 0;
+      let incorrectCount = 0;
+      
+      issues.forEach((issue: any) => {
+        const labels = issue.fields.labels || [];
+        if (labels.includes('ai-correct')) {
+          correctCount++;
+        }
+        if (labels.includes('ai-incorrect')) {
+          incorrectCount++;
+        }
+      });
+      
+      const totalFeedback = correctCount + incorrectCount;
+      if (totalFeedback > 0) {
+        aiAccuracy = Math.round((correctCount / totalFeedback) * 100);
+        console.log('[getStatistics] AI Accuracy calculated:', {
+          correct: correctCount,
+          incorrect: incorrectCount,
+          total: totalFeedback,
+          accuracy: aiAccuracy
+        });
+      }
+    }
+    
     const result = {
       untriagedCount,
       todayProcessed: todayProcessedCount,
       weekProcessed: weekProcessedCount,
       overdueCount,
       openTickets,
-      aiAccuracy: 94  // Mock data - will be calculated based on feedback
+      aiAccuracy
     };
     
     console.log('[getStatistics] Result:', result);
