@@ -293,8 +293,15 @@ export async function suggestAssignee(input: SuggestAssigneeInput): Promise<Sugg
       };
     }
     
-    // Simple workload-based selection
-    const sortedAgents = [...input.availableAgents].sort((a, b) => a.currentLoad - b.currentLoad);
+    // Simple workload-based selection with randomization for equal workloads
+    const sortedAgents = [...input.availableAgents].sort((a, b) => {
+      // Primary sort: by workload (ascending)
+      if (a.currentLoad !== b.currentLoad) {
+        return a.currentLoad - b.currentLoad;
+      }
+      // Secondary sort: random for equal workloads
+      return Math.random() - 0.5;
+    });
     const bestAgent = sortedAgents[0];
     const alternatives = sortedAgents.slice(1, 3).map(agent => ({
       assignee: agent.name,
