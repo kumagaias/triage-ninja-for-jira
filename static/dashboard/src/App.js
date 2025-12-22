@@ -395,18 +395,18 @@ function App() {
         ) : (
           <>
             <StatCard
-              title="Open Tickets"
-              value={statistics.openTickets || 0}
-              color="#6554C0"
-              theme={theme}
-              onClick={() => setFilters({ assignee: 'all', status: 'open', dateRange: 'all' })}
-            />
-            <StatCard
               title={t.untriaged}
               value={statistics.untriagedCount}
               color="#0052CC"
               theme={theme}
               onClick={() => setFilters({ assignee: 'untriaged', status: 'open', dateRange: 'all' })}
+            />
+            <StatCard
+              title="Open Tickets"
+              value={statistics.openTickets || 0}
+              color="#6554C0"
+              theme={theme}
+              onClick={() => setFilters({ assignee: 'all', status: 'open', dateRange: 'all' })}
             />
             <StatCard
               title={t.overdueTickets || 'Overdue'}
@@ -416,8 +416,8 @@ function App() {
               onClick={() => setFilters({ assignee: 'all', status: 'overdue', dateRange: 'all' })}
             />
             <StatCard
-              title={t.todayProcessed}
-              value={statistics.todayProcessed}
+              title="Processed"
+              value={`${statistics.todayProcessed} today`}
               color="#36B37E"
               theme={theme}
               onClick={() => setFilters({ assignee: 'all', status: 'done', dateRange: 'today' })}
@@ -624,10 +624,10 @@ function App() {
               </div>
               <div 
                 onClick={() => handleSort('priority')}
-                style={{ flex: '0 0 auto', minWidth: '70px', textAlign: 'center', cursor: 'pointer', userSelect: 'none' }}>
+                style={{ flex: '0 0 70px', textAlign: 'center', cursor: 'pointer', userSelect: 'none' }}>
                 {t.priority} {sortConfig.key === 'priority' && (sortConfig.direction === 'asc' ? '↑' : '↓')}
               </div>
-              <div style={{ flex: '0 0 auto', minWidth: '150px' }}>
+              <div style={{ flex: '0 0 150px' }}>
                 {/* Action buttons column */}
               </div>
             </div>
@@ -801,7 +801,7 @@ function App() {
         fontSize: '12px',
         color: theme.textSecondary
       }}>
-        TriageNinja v6.38.0 (Production)
+        TriageNinja v6.42.0 (Production)
       </div>
     </div>
   );
@@ -1321,7 +1321,7 @@ function TicketRow({ ticket, t, theme, onTriageClick }) {
         {ticket.fields.summary}
       </div>
       
-      {/* Assignee - Blue text for unassigned */}
+      {/* Assignee - Triage button if unassigned */}
       <div style={{
         flex: '0 0 120px',
         fontSize: '12px',
@@ -1334,12 +1334,24 @@ function TicketRow({ ticket, t, theme, onTriageClick }) {
             {ticket.fields.assignee.displayName}
           </span>
         ) : (
-          <span style={{
-            color: '#0052CC',
-            fontWeight: '500'
-          }}>
-            {t.unassigned || 'Unassigned'}
-          </span>
+          <button
+            onClick={(e) => {
+              e.stopPropagation();
+              onTriageClick();
+            }}
+            style={{
+              padding: '3px 8px',
+              backgroundColor: '#0052CC',
+              color: 'white',
+              border: 'none',
+              borderRadius: '3px',
+              fontSize: '11px',
+              cursor: 'pointer',
+              fontWeight: '500'
+            }}
+          >
+            Triage
+          </button>
         )}
       </div>
       
@@ -1402,8 +1414,7 @@ function TicketRow({ ticket, t, theme, onTriageClick }) {
       
       {/* Priority - Text display */}
       <div style={{
-        flex: '0 0 auto',
-        minWidth: '70px',
+        flex: '0 0 70px',
         textAlign: 'center',
         fontSize: '12px',
         fontWeight: '500',
@@ -1413,7 +1424,7 @@ function TicketRow({ ticket, t, theme, onTriageClick }) {
       </div>
       
       {/* Action Buttons */}
-      <div style={{ flex: '0 0 auto', display: 'flex', gap: '6px' }}>
+      <div style={{ flex: '0 0 150px', display: 'flex', gap: '6px' }}>
         {/* Triage Button */}
         <button
           onClick={(e) => {

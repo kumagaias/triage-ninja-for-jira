@@ -38,7 +38,7 @@ dashboardResolver.define('getTickets', async (req) => {
   const response = await JiraClient.searchIssues({
     jql,
     maxResults: 100,
-    fields: ['summary', 'priority', 'created', 'reporter', 'assignee', 'status']
+    fields: ['summary', 'priority', 'created', 'reporter', 'assignee', 'status', 'duedate']
   });
   
   if (!response.ok || !response.data) {
