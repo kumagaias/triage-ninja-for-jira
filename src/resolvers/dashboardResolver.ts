@@ -189,43 +189,104 @@ dashboardResolver.define('getStatistics', async (req) => {
 /**
  * Create test tickets for demo purposes
  * Creates sample tickets with various priorities and categories
+ * Includes random priorities and due dates
  */
 dashboardResolver.define('createTestTickets', async (req) => {
   const projectKey = req.context.extension.project.key;
   
-  // Test ticket templates
+  // Realistic test ticket templates
   const testTickets = [
     {
-      summary: 'Cannot connect to VPN from home',
-      description: 'I\'m trying to connect to the company VPN from my home office, but I keep getting an "Authentication failed" error. This is urgent as I need to access internal systems.'
+      summary: 'Password Reset Request',
+      description: 'I am unable to log in to my company account. Could you please reset my password?'
     },
     {
-      summary: 'Office printer not printing color documents',
-      description: 'The printer on the 3rd floor is only printing in black and white, even when I select color printing in the settings.'
+      summary: 'VPN Connection Issue',
+      description: 'I cannot connect to the VPN from my home network. I keep receiving a "Connection Timed Out" error.'
     },
     {
-      summary: 'Need to reset my email password',
-      description: 'I forgot my email password and can\'t log in to Outlook. I\'ve tried the self-service password reset, but I\'m not receiving the verification code.'
+      summary: 'Software Installation',
+      description: 'I need to install Adobe Acrobat Pro for my new project. Could you please authorize the installation?'
+    },
+    {
+      summary: 'Outlook Sync Error',
+      description: 'My Outlook is not receiving new emails, and the status bar says "Disconnected." I have already tried restarting the app.'
+    },
+    {
+      summary: 'Hardware Upgrade',
+      description: 'My laptop has been running very slowly lately. I would like to request an additional 8GB of RAM.'
+    },
+    {
+      summary: 'Printer Connection Failure',
+      description: 'I am unable to connect to the printer on the 3rd floor (Printer-3F-02). It is not showing up in my list of devices.'
+    },
+    {
+      summary: 'New Hire Account Setup',
+      description: 'We have a new team member joining on Monday. Please set up their AD account and email address.'
+    },
+    {
+      summary: 'Blue Screen Error (BSOD)',
+      description: 'My computer crashed suddenly and displayed a blue screen with an error code. I have attached a photo of the screen.'
+    },
+    {
+      summary: 'Access Permission Request',
+      description: 'I need "Read/Write" access to the "Marketing_2024" folder on the shared drive for an upcoming audit.'
+    },
+    {
+      summary: 'Monitor Not Detected',
+      description: 'My second monitor is blank and says "No Signal," even though it is plugged in. I\'ve tried swapping the HDMI cable.'
     }
   ];
+  
+  // Priority options
+  const priorities = ['Highest', 'High', 'Medium', 'Low', 'Lowest'];
+  
+  // Helper function to get random priority
+  const getRandomPriority = () => {
+    return priorities[Math.floor(Math.random() * priorities.length)];
+  };
+  
+  // Helper function to get random due date (none or 1-7 days from now)
+  const getRandomDueDate = () => {
+    const random = Math.random();
+    if (random < 0.3) {
+      // 30% chance of no due date
+      return null;
+    }
+    // 70% chance of due date 1-7 days from now
+    const daysFromNow = Math.floor(Math.random() * 7) + 1;
+    const dueDate = new Date();
+    dueDate.setDate(dueDate.getDate() + daysFromNow);
+    return dueDate.toISOString().split('T')[0]; // Format: YYYY-MM-DD
+  };
   
   try {
     const createdTickets = [];
     
-    for (const ticket of testTickets) {
-      // Create issue with minimal required fields
-      // Priority is optional and will use project default
-      const response = await JiraClient.createIssue({
-        fields: {
-          project: { key: projectKey },
-          summary: ticket.summary,
-          description: ticket.description,
-          issuetype: { name: 'Task' }
-        }
-      });
+    // Randomly select 3 tickets from the template list
+    const shuffled = [...testTickets].sort(() => Math.random() - 0.5);
+    const selectedTickets = shuffled.slice(0, 3);
+    
+    for (const ticket of selectedTickets) {
+      const fields: any = {
+        project: { key: projectKey },
+        summary: ticket.summary,
+        description: ticket.description,
+        issuetype: { name: 'Task' },
+        priority: { name: getRandomPriority() }
+      };
+      
+      // Add due date if randomly selected
+      const dueDate = getRandomDueDate();
+      if (dueDate) {
+        fields.duedate = dueDate;
+      }
+      
+      const response = await JiraClient.createIssue({ fields });
       
       if (response.ok && response.data) {
         createdTickets.push(response.data.key);
+        console.log(`Created test ticket: ${response.data.key} - ${ticket.summary} (Priority: ${fields.priority.name}, Due: ${dueDate || 'None'})`);
       } else {
         console.error('Failed to create ticket:', response.error);
       }

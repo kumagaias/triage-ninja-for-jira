@@ -799,7 +799,7 @@ function App() {
         fontSize: '12px',
         color: theme.textSecondary
       }}>
-        TriageNinja v6.44.0 (Production)
+        TriageNinja v6.45.0 (Production)
       </div>
     </div>
   );
