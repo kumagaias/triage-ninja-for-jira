@@ -867,8 +867,12 @@ function TriageModal({ ticket, onClose, onSuccess, theme, t }) {
         issueKey: ticket.key,
         priority: result.priority,
         assigneeId: result.suggestedAssignee?.id,
+        assigneeName: result.suggestedAssignee?.name,
         category: result.category,
-        subCategory: result.subCategory
+        subCategory: result.subCategory,
+        confidence: result.confidence,
+        reasoning: result.reasoning,
+        source: result.source
       });
       
       // Check if there's a warning (e.g., assignee couldn't be set)

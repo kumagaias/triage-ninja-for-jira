@@ -586,11 +586,15 @@ dashboardResolver.define('applyTriageResult', async (req) => {
     issueKey: string;
     priority: string;
     assigneeId: string;
+    assigneeName?: string;
     category: string;
     subCategory: string;
+    confidence?: number;
+    reasoning?: string;
+    source?: string;
   };
   
-  const { issueKey, priority, assigneeId, category, subCategory } = payload;
+  const { issueKey, priority, assigneeId, assigneeName, category, subCategory, confidence, reasoning, source } = payload;
   
   if (!issueKey) {
     throw new Error('Missing required parameter: issueKey');
@@ -659,6 +663,20 @@ dashboardResolver.define('applyTriageResult', async (req) => {
       
       throw new Error(`Failed to update issue: ${JSON.stringify(updateResponse.error)}`);
     }
+    
+    // Add comment with triage results
+    const aiSource = source === 'forge-llm' ? 'Forge LLM (Rovo)' : 'Keyword-based AI';
+    const comment = `🤖 **AI Triage Complete** (${aiSource})
+
+- **Category**: ${category}${subCategory ? ` / ${subCategory}` : ''}
+- **Priority**: ${priority}
+${assigneeName ? `- **Assigned to**: ${assigneeName}` : ''}
+${confidence ? `- **Confidence**: ${confidence}%` : ''}
+${reasoning ? `\n**Reasoning**: ${reasoning}` : ''}
+
+This ticket has been classified and assigned by TriageNinja AI.`;
+
+    await JiraClient.addComment(issueKey, comment);
     
     return {
       success: true,
