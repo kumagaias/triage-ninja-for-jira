@@ -8,7 +8,6 @@
 // Export resolver handlers
 export { dashboardHandler } from './resolvers/dashboardResolver';
 export { issuePanelHandler } from './resolvers/issuePanelResolver';
-export { runAutoTriage } from './resolvers/autoTriageResolver';
 export { changeAssignee } from './resolvers/changeAssigneeResolver';
 
 // Export Trigger handlers

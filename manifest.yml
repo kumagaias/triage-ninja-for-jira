@@ -22,10 +22,12 @@ modules:
       icon: https://kumagaias.github.io/triage-ninja-for-jira/assets/triageninja-icon.png
 
   # Forge LLM (Rovo) for AI-powered triage
-  llm:
-    - key: triageninja-llm
-      model:
-        - claude
+  # Temporarily disabled until EAP approval is received
+  # Uncomment after EAP approval: https://go.atlassian.com/signup-forge-llms
+  # llm:
+  #   - key: triageninja-llm
+  #     model:
+  #       - claude
 
   # Rovo Actions (kept for compatibility)
   action:
@@ -64,8 +66,6 @@ modules:
   function:
     - key: dashboard-resolver
       handler: index.dashboardHandler
-    - key: auto-triage-resolver
-      handler: index.runAutoTriage
     - key: change-assignee
       handler: index.changeAssignee
     - key: auto-triage-trigger
