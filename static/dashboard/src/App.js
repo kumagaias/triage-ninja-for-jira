@@ -277,10 +277,10 @@ function App() {
         borderRadius: '8px',
         overflow: 'hidden',
         position: 'relative',
-        height: '200px',
+        height: '150px',
         backgroundImage: 'url(triageninja-hero.jpg)',
         backgroundSize: 'cover',
-        backgroundPosition: 'center',
+        backgroundPosition: 'top center',
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'space-between',
@@ -787,9 +787,6 @@ function App() {
         <div style={{ marginTop: '15px', paddingTop: '15px', borderTop: `1px solid ${theme.border}` }}>
           {/* Test Tickets Section */}
           <div>
-            <h3 style={{ margin: '0 0 10px 0', fontSize: '14px', color: theme.textPrimary }}>
-              🧪 Test Tickets
-            </h3>
             <TestTicketButton t={t} onTicketsCreated={() => window.location.reload()} />
           </div>
         </div>
@@ -802,7 +799,7 @@ function App() {
         fontSize: '12px',
         color: theme.textSecondary
       }}>
-        TriageNinja v6.46.0 (Production)
+        TriageNinja v6.47.0 (Production)
       </div>
     </div>
   );
@@ -1141,7 +1138,7 @@ function TestTicketButton({ t, onTicketsCreated }) {
   };
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: '8px' }}>
+    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-start', gap: '8px' }}>
       <button
         onClick={handleCreateTestTickets}
         disabled={creating}
@@ -1157,7 +1154,7 @@ function TestTicketButton({ t, onTicketsCreated }) {
           transition: 'background-color 0.2s'
         }}
       >
-        {creating ? t.creating : t.createTestTickets}
+        {creating ? '⏳ Creating...' : '🧪 Create Test Tickets'}
       </button>
       {message && (
         <div style={{ 
@@ -1220,7 +1217,7 @@ function StatCard({ title, value, color, theme, onClick }) {
       style={{
         backgroundColor: theme.cardBackground,
         borderRadius: '3px',
-        padding: '15px',
+        padding: '12px',
         boxShadow: '0 1px 1px rgba(9,30,66,0.25)',
         borderTop: `3px solid ${color}`,
         minWidth: '150px',
@@ -1236,11 +1233,11 @@ function StatCard({ title, value, color, theme, onClick }) {
         e.currentTarget.style.boxShadow = '0 1px 1px rgba(9,30,66,0.25)';
       }}
     >
-      <div style={{ fontSize: '12px', color: theme.textSecondary, marginBottom: '8px', fontWeight: '500' }}>
+      <div style={{ fontSize: '11px', color: theme.textSecondary, marginBottom: '6px', fontWeight: '500' }}>
         {title}
       </div>
       <div style={{ 
-        fontSize: 'clamp(24px, 5vw, 32px)', 
+        fontSize: 'clamp(22px, 5vw, 28px)', 
         fontWeight: 'bold', 
         color: theme.textPrimary
       }}>
@@ -1488,7 +1485,7 @@ function ProcessedStatCard({ value, timeRange, onTimeRangeChange, theme }) {
         position: 'relative',
         backgroundColor: theme.cardBackground,
         borderRadius: '3px',
-        padding: '15px',
+        padding: '12px',
         boxShadow: '0 1px 1px rgba(9,30,66,0.25)',
         borderTop: '3px solid #36B37E',
         minWidth: '150px',
@@ -1505,18 +1502,18 @@ function ProcessedStatCard({ value, timeRange, onTimeRangeChange, theme }) {
         e.currentTarget.style.boxShadow = '0 1px 1px rgba(9,30,66,0.25)';
       }}
     >
-      <div style={{ fontSize: '12px', color: theme.textSecondary, marginBottom: '8px', fontWeight: '500', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+      <div style={{ fontSize: '11px', color: theme.textSecondary, marginBottom: '6px', fontWeight: '500', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
         <span>Processed</span>
-        <span style={{ fontSize: '10px' }}>▼</span>
+        <span style={{ fontSize: '9px' }}>▼</span>
       </div>
       <div style={{ 
-        fontSize: 'clamp(24px, 5vw, 32px)', 
+        fontSize: 'clamp(22px, 5vw, 28px)', 
         fontWeight: 'bold', 
         color: theme.textPrimary
       }}>
         {value}
       </div>
-      <div style={{ fontSize: '11px', color: theme.textSecondary, marginTop: '4px' }}>
+      <div style={{ fontSize: '10px', color: theme.textSecondary, marginTop: '2px' }}>
         {timeRange === 'today' ? 'today' : 'this week'}
       </div>
       

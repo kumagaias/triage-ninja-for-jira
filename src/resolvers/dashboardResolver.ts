@@ -137,14 +137,17 @@ dashboardResolver.define('getStatistics', async (req) => {
       ? todayProcessedResponse.data.issues.length
       : 0;
     
-    // Get this week's processed tickets (assigned this week)
-    const weekAgo = new Date();
-    weekAgo.setDate(weekAgo.getDate() - 7);
-    weekAgo.setHours(0, 0, 0, 0);
-    const weekAgoStr = weekAgo.toISOString().split('T')[0];
+    // Get this week's processed tickets (Monday to Sunday)
+    const now = new Date();
+    const dayOfWeek = now.getDay(); // 0 = Sunday, 1 = Monday, ..., 6 = Saturday
+    const daysToMonday = dayOfWeek === 0 ? 6 : dayOfWeek - 1; // If Sunday, go back 6 days; otherwise go back to Monday
+    const monday = new Date(now);
+    monday.setDate(now.getDate() - daysToMonday);
+    monday.setHours(0, 0, 0, 0);
+    const mondayStr = monday.toISOString().split('T')[0];
     
     const weekProcessedResponse = await JiraClient.searchIssues({
-      jql: `project = ${projectKey} AND assignee changed FROM EMPTY AFTER "${weekAgoStr}"`,
+      jql: `project = ${projectKey} AND assignee changed FROM EMPTY AFTER "${mondayStr}"`,
       maxResults: 100,
       fields: ['key']
     });
