@@ -96,6 +96,36 @@ export class JiraClient {
   }
 
   /**
+   * Fetch a single issue by key or ID using app context (for triggers)
+   * @param issueIdOrKey - Issue key (e.g., "HELP-123") or ID
+   * @param fields - Optional array of fields to retrieve
+   * @returns Promise with issue data or error
+   */
+  static async getIssueAsApp(
+    issueIdOrKey: string,
+    fields?: string[]
+  ): Promise<ApiResponse<JiraIssue>> {
+    try {
+      // Use route template with direct parameter interpolation
+      // Query parameters must be added separately to avoid path manipulation errors
+      let response;
+      if (fields && fields.length > 0) {
+        response = await api
+          .asApp()
+          .requestJira(route`/rest/api/3/issue/${issueIdOrKey}?fields=${fields.join(',')}`);
+      } else {
+        response = await api
+          .asApp()
+          .requestJira(route`/rest/api/3/issue/${issueIdOrKey}`);
+      }
+
+      return this.handleResponse<JiraIssue>(response);
+    } catch (error) {
+      return this.handleApiError<JiraIssue>(error, 'fetch issue as app');
+    }
+  }
+
+  /**
    * Search for issues using JQL
    * @param searchRequest - Search parameters including JQL query
    * @returns Promise with search results or error
@@ -142,6 +172,28 @@ export class JiraClient {
   }
 
   /**
+   * Get assignable users for a project using app context (for triggers)
+   * @param projectKey - Project key (e.g., "HELP")
+   * @param maxResults - Maximum number of results (default: 50)
+   * @returns Promise with user list or error
+   */
+  static async getAssignableUsersAsApp(
+    projectKey: string,
+    maxResults: number = 50
+  ): Promise<ApiResponse<JiraUser[]>> {
+    try {
+      // Use route template with direct parameter interpolation
+      const response = await api
+        .asApp()
+        .requestJira(route`/rest/api/3/user/assignable/search?project=${projectKey}&maxResults=${maxResults}`);
+
+      return this.handleResponse<JiraUser[]>(response);
+    } catch (error) {
+      return this.handleApiError<JiraUser[]>(error, 'fetch assignable users as app');
+    }
+  }
+
+  /**
    * Update an issue
    * @param issueIdOrKey - Issue key or ID
    * @param fields - Fields to update
@@ -177,6 +229,45 @@ export class JiraClient {
       };
     } catch (error) {
       return this.handleApiError<void>(error, 'update issue');
+    }
+  }
+
+  /**
+   * Update an issue using app context (for triggers)
+   * @param issueIdOrKey - Issue key or ID
+   * @param fields - Fields to update
+   * @returns Promise with success status or error
+   */
+  static async updateIssueAsApp(
+    issueIdOrKey: string,
+    fields: Partial<JiraIssueFields>
+  ): Promise<ApiResponse<void>> {
+    try {
+      const response = await api
+        .asApp()
+        .requestJira(route`/rest/api/3/issue/${issueIdOrKey}`, {
+          method: 'PUT',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({ fields }),
+        });
+
+      if (!response.ok) {
+        const errorData: JiraErrorResponse = await response.json();
+        return {
+          error: errorData,
+          status: response.status,
+          ok: false,
+        };
+      }
+
+      return {
+        status: response.status,
+        ok: true,
+      };
+    } catch (error) {
+      return this.handleApiError<void>(error, 'update issue as app');
     }
   }
 
@@ -296,6 +387,61 @@ export class JiraClient {
       };
     } catch (error) {
       return this.handleApiError<void>(error, 'add comment');
+    }
+  }
+
+  /**
+   * Add a comment to an issue using app context (for triggers)
+   * @param issueIdOrKey - Issue key or ID
+   * @param commentBody - Comment text (supports Jira markdown)
+   * @returns Promise with success status or error
+   */
+  static async addCommentAsApp(
+    issueIdOrKey: string,
+    commentBody: string
+  ): Promise<ApiResponse<void>> {
+    try {
+      const response = await api
+        .asApp()
+        .requestJira(route`/rest/api/3/issue/${issueIdOrKey}/comment`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            body: {
+              type: 'doc',
+              version: 1,
+              content: [
+                {
+                  type: 'paragraph',
+                  content: [
+                    {
+                      type: 'text',
+                      text: commentBody
+                    }
+                  ]
+                }
+              ]
+            }
+          }),
+        });
+
+      if (!response.ok) {
+        const errorData: JiraErrorResponse = await response.json();
+        return {
+          error: errorData,
+          status: response.status,
+          ok: false,
+        };
+      }
+
+      return {
+        status: response.status,
+        ok: true,
+      };
+    } catch (error) {
+      return this.handleApiError<void>(error, 'add comment as app');
     }
   }
 }

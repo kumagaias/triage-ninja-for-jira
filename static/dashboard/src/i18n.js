@@ -18,7 +18,7 @@ export const translations = {
     // Statistics Cards
     untriaged: 'Untriaged',
     todayProcessed: 'Today Processed',
-    timeSaved: 'Time Saved',
+    overdueTickets: 'Overdue',
     aiAccuracy: 'AI Accuracy',
     
     // Filters
@@ -78,7 +78,7 @@ export const translations = {
     // Statistics Cards
     untriaged: '未処理',
     todayProcessed: '本日の処理',
-    timeSaved: '時間削減',
+    overdueTickets: '期限切れ',
     aiAccuracy: 'AI精度',
     
     // Filters

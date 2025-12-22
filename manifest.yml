@@ -1,4 +1,17 @@
 modules:
+  # Auto-Triage Trigger - Automatically triage new issues
+  trigger:
+    - key: auto-triage-on-issue-created
+      function: auto-triage-trigger
+      events:
+        - avi:jira:created:issue
+  
+  # Automation Action Provider (for manual setup)
+  automation:actionProvider:
+    - key: triageninja-action-provider
+      actions:
+        - auto-triage-action
+  
   # Dashboard - Project Page
   jira:projectPage:
     - key: triageninja-dashboard
@@ -7,18 +20,6 @@ modules:
         function: dashboard-resolver
       title: TriageNinja
       icon: https://kumagaias.github.io/triage-ninja-for-jira/assets/triageninja-icon.png
-  
-  # AI Triage Panel - Issue Panel
-  jira:issuePanel:
-    - key: triageninja-issue-panel
-      resource: issue-panel
-      resolver:
-        function: auto-triage-resolver
-      viewportSize: medium
-      title: AI Triage
-      icon: https://kumagaias.github.io/triage-ninja-for-jira/assets/triageninja-icon.png
-      layout:
-        type: basic
   
   # Rovo Agent for AI Analysis
   rovo:agent:
@@ -49,6 +50,38 @@ modules:
   
   # Rovo Actions
   action:
+    # Automation Action for Auto-Triage
+    - key: auto-triage-action
+      name: TriageNinja Auto Triage
+      function: automation-auto-triage
+      actionVerb: UPDATE
+      actionType: automation
+      description: Automatically classify and assign tickets using Rovo Agent AI
+      inputs:
+        issueKey:
+          title: Issue Key
+          type: string
+          required: true
+          description: "The Jira issue key (e.g., SUP-123). Use {{issue.key}} in Automation rules."
+      outputs:
+        category:
+          description: "The classified category"
+          type: string
+          nullable: false
+        priority:
+          description: "The suggested priority"
+          type: string
+          nullable: false
+        assignee:
+          description: "The suggested assignee account ID"
+          type: string
+          nullable: true
+        confidence:
+          description: "AI confidence score (0-100)"
+          type: number
+          nullable: false
+    
+    # Rovo Agent Actions
     - key: analyze-ticket-classification
       name: Analyze Ticket Classification
       function: analyze-classification
@@ -100,12 +133,14 @@ modules:
   function:
     - key: dashboard-resolver
       handler: index.dashboardHandler
-    - key: issue-panel-resolver
-      handler: index.issuePanelHandler
     - key: auto-triage-resolver
       handler: index.runAutoTriage
     - key: change-assignee
       handler: index.changeAssignee
+    - key: auto-triage-trigger
+      handler: index.autoTriageTriggerHandler
+    - key: automation-auto-triage
+      handler: index.automationAutoTriageHandler
     - key: analyze-classification
       handler: index.analyzeTicketClassification
     - key: suggest-assignee
@@ -116,8 +151,6 @@ modules:
 resources:
   - key: dashboard
     path: static/dashboard/build
-  - key: issue-panel
-    path: static/issue-panel/build
 
 permissions:
   scopes:

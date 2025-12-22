@@ -17,9 +17,10 @@ const getConfidenceClass = (confidence) => {
 /**
  * AI Triage Panel Component
  * Displays AI-powered triage analysis for Jira issues
+ * Version: 5.5.0 - One-step triage with candidate selection
  */
 function App() {
-  console.log('[AI Triage] Component mounted');
+  console.log('[AI Triage] Component mounted - v5.5.0');
   
   const [issueDetails, setIssueDetails] = useState(null);
   const [loading, setLoading] = useState(false);
@@ -322,7 +323,17 @@ function App() {
         <span>{t.aiTriage}</span>
       </h2>
       
-      {!triageResult && (
+      {/* Version indicator */}
+      <div style={{ 
+        fontSize: '10px', 
+        color: '#6B778C', 
+        marginBottom: '8px',
+        textAlign: 'right'
+      }}>
+        v6.3.0
+      </div>
+      
+      {!successMessage && (
         <div>
           <div className="status-box">
             <div className="status-label">

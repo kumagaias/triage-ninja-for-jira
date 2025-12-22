@@ -137,10 +137,11 @@ Respond in the following JSON format:
 }`;
 
   try {
-    console.log('Classifying ticket using keyword-based classification');
+    console.log('Classifying ticket using keyword-based classification (Rovo Agent integration via Jira Automation)');
     
-    // Note: Rovo Agent API integration will be added in future version
-    // Currently using keyword-based classification
+    // Note: Rovo Agent is integrated via Jira Automation Rules
+    // This function provides fallback classification when Automation is not triggered
+    // For AI-powered classification, use Jira Automation to invoke Rovo Agent
     
     // Simple keyword-based classification as fallback
     const summaryLower = String(input.summary || '').toLowerCase();

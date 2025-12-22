@@ -1,6 +1,6 @@
 {
   "name": "jira-issue-panel-custom-ui",
-  "version": "1.2.23",
+  "version": "1.2.35",
   "main": "dist/index.js",
   "license": "MIT",
   "private": true,
@@ -27,6 +27,7 @@
   },
   "dependencies": {
     "@forge/api": "6.4.1",
+    "@forge/llm": "^0.3.0",
     "@forge/resolver": "1.7.1",
     "@playwright/test": "^1.57.0"
   }

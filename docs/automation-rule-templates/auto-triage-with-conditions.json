@@ -1,0 +1,88 @@
+{
+  "name": "TriageNinja Auto-Triage (Untriaged Only)",
+  "description": "Automatically classify and assign new tickets that have no assignee",
+  "state": "ENABLED",
+  "ruleScope": {
+    "resources": ["ari:cloud:jira::project/YOUR_PROJECT_ID"]
+  },
+  "trigger": {
+    "component": "TRIGGER",
+    "type": "jira.issue.event.trigger:created",
+    "value": {
+      "eventKey": "jira:issue_created"
+    },
+    "children": [],
+    "conditions": [
+      {
+        "component": "CONDITION",
+        "type": "jira.issue.condition",
+        "value": {
+          "selectedField": {
+            "type": "ID",
+            "value": "assignee"
+          },
+          "selectedFieldType": "assignee",
+          "comparison": "EMPTY",
+          "compareValue": {
+            "type": "ID",
+            "value": ""
+          }
+        },
+        "children": [],
+        "conditions": []
+      }
+    ]
+  },
+  "components": [
+    {
+      "component": "ACTION",
+      "type": "forge.action",
+      "value": {
+        "appKey": "ari:cloud:ecosystem::app/81023c08-dbac-4cd9-8835-f1fe99bbb17c",
+        "actionKey": "auto-triage-action",
+        "inputs": {
+          "issueKey": "{{issue.key}}"
+        }
+      },
+      "children": [],
+      "conditions": []
+    },
+    {
+      "component": "ACTION",
+      "type": "jira.issue.edit",
+      "value": {
+        "operations": [
+          {
+            "fieldId": "priority",
+            "fieldType": "priority",
+            "type": "SET",
+            "value": "{{autoTriageAction.priority}}"
+          },
+          {
+            "fieldId": "assignee",
+            "fieldType": "assignee",
+            "type": "SET",
+            "value": "{{autoTriageAction.assignee}}"
+          },
+          {
+            "fieldId": "labels",
+            "fieldType": "labels",
+            "type": "ADD",
+            "value": "{{autoTriageAction.category}}"
+          }
+        ]
+      },
+      "children": [],
+      "conditions": []
+    },
+    {
+      "component": "ACTION",
+      "type": "jira.issue.create.comment",
+      "value": {
+        "comment": "🤖 **AI Triage Complete**\\n\\n- **Category**: {{autoTriageAction.category}}\\n- **Priority**: {{autoTriageAction.priority}}\\n- **Confidence**: {{autoTriageAction.confidence}}%\\n\\nThis ticket has been automatically classified and assigned."
+      },
+      "children": [],
+      "conditions": []
+    }
+  ]
+}

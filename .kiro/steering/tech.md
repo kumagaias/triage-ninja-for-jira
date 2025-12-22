@@ -165,6 +165,41 @@ test('user can run AI triage', async ({ page }) => {
 
 ## Deployment
 
+**⚠️ CRITICAL: Two-Stage Build Process**
+
+TriageNinja has separate frontend (React) and backend (TypeScript) builds:
+
+### Frontend Deployment (React App Changes)
+
+When modifying `static/dashboard/src/` files:
+
+```bash
+# Step 1: Build React app
+cd static/dashboard && npm run build
+
+# Step 2: Build TypeScript
+cd ../.. && npm run build
+
+# Step 3: Deploy to Forge
+forge deploy --environment production --non-interactive
+```
+
+**One-liner:**
+```bash
+cd static/dashboard && npm run build && cd ../.. && npm run build && forge deploy --environment production --non-interactive
+```
+
+### Backend Deployment (Resolver/Action Changes)
+
+When modifying `src/` files only:
+
+```bash
+npm run build
+forge deploy --environment production --non-interactive
+```
+
+### Development vs Production
+
 ```bash
 # Development
 forge deploy --environment development
@@ -175,6 +210,20 @@ forge tunnel
 forge deploy --environment production
 forge install --upgrade --environment production
 ```
+
+**Important: Frontend vs Backend**
+- **Frontend changes** (React components in `static/dashboard/src/`): Require React build + Forge deploy
+- **Backend changes** (resolvers, actions): Can use `forge tunnel` for live testing
+- `forge tunnel` only redirects backend function calls to local machine
+- Static files (HTML/JS/CSS) are always served from deployed version
+
+**Workflow:**
+1. Frontend change → React build → TypeScript build → Deploy → Hard reload browser (Cmd+Shift+R)
+2. Backend change → Use `forge tunnel` for instant testing (no deploy needed)
+
+**Verification:**
+- Check version number in UI footer (e.g., "TriageNinja v6.36.0")
+- If version doesn't update, React build was skipped
 
 **Checklist:**
 - [ ] `forge lint`

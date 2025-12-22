@@ -11,6 +11,12 @@ export { issuePanelHandler } from './resolvers/issuePanelResolver';
 export { runAutoTriage } from './resolvers/autoTriageResolver';
 export { changeAssignee } from './resolvers/changeAssigneeResolver';
 
+// Export Trigger handlers
+export { autoTriageTriggerHandler } from './triggers/autoTriageTrigger';
+
+// Export Automation Action handler
+export { automationAutoTriageHandler } from './resolvers/automationActionResolver';
+
 // Export Rovo actions
 export {
   analyzeTicketClassification,

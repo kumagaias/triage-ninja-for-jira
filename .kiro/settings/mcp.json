@@ -11,6 +11,15 @@
         "fetch"
       ]
     },
+    "forge-knowledge": {
+      "url": "https://mcp.atlassian.com/v1/forge/mcp",
+      "type": "http",
+      "disabled": false,
+      "autoApprove": [
+        "search-forge-docs",
+        "forge-development-guide"
+      ]
+    },
     "aws-docs": {
       "command": "uvx",
       "args": [

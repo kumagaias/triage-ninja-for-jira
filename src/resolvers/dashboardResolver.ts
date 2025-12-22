@@ -1,7 +1,9 @@
 import Resolver from '@forge/resolver';
 import { storage } from '@forge/api';
+import api, { route } from '@forge/api';
 import { JiraClient } from '../services/jiraClient';
 import * as RovoAgent from '../services/rovoAgent';
+import * as ForgeLlmTriage from '../services/forgeLlmTriage';
 import { calculateUserWorkload } from '../utils/helpers';
 import { DEFAULT_MAX_RESULTS, MAX_RESULTS_LIMIT } from '../utils/constants';
 
@@ -48,6 +50,47 @@ dashboardResolver.define('getTickets', async (req) => {
 });
 
 /**
+ * Get project members with their ticket counts
+ */
+dashboardResolver.define('getProjectMembers', async (req) => {
+  const projectKey = req.context.extension.project.key;
+  
+  try {
+    // Get assignable users for the project
+    const usersResponse = await JiraClient.getAssignableUsers(projectKey, 50);
+    
+    if (!usersResponse.ok || !usersResponse.data) {
+      console.error('Failed to fetch assignable users:', usersResponse.error);
+      return [];
+    }
+    
+    // Filter only active users
+    const activeUsers = usersResponse.data.filter(user => user.active === true);
+    
+    // Get ticket count for each active user
+    const membersWithCounts = await Promise.all(
+      activeUsers.map(async (user) => {
+        const ticketCount = await calculateUserWorkload(user.accountId, projectKey);
+        return {
+          accountId: user.accountId,
+          displayName: user.displayName,
+          role: 'Member', // TODO: Fetch actual role from project roles API
+          ticketCount
+        };
+      })
+    );
+    
+    // Sort by ticket count (descending)
+    membersWithCounts.sort((a, b) => b.ticketCount - a.ticketCount);
+    
+    return membersWithCounts;
+  } catch (error) {
+    console.error('Error in getProjectMembers:', error);
+    return [];
+  }
+});
+
+/**
  * Get dashboard statistics
  * Returns metrics for the dashboard cards
  */
@@ -77,13 +120,15 @@ dashboardResolver.define('getStatistics', async (req) => {
       error: untriagedResponse.error
     });
     
-    // Get today's processed tickets (assigned today)
+    // Get today's processed tickets (assigned today - changed from EMPTY to not EMPTY today)
     const today = new Date();
     today.setHours(0, 0, 0, 0);
     const todayStr = today.toISOString().split('T')[0];
     
+    // Search for tickets that were assigned today (assignee changed from empty to not empty)
+    // This captures tickets that were triaged today
     const todayProcessedResponse = await JiraClient.searchIssues({
-      jql: `project = ${projectKey} AND assignee is not EMPTY AND updated >= "${todayStr}"`,
+      jql: `project = ${projectKey} AND assignee changed TO currentUser() AFTER "${todayStr}" OR assignee changed FROM EMPTY AFTER "${todayStr}"`,
       maxResults: 100, // Get up to 100 tickets to count
       fields: ['key'] // Only need the key field
     });
@@ -92,10 +137,37 @@ dashboardResolver.define('getStatistics', async (req) => {
       ? todayProcessedResponse.data.issues.length
       : 0;
     
+    // Get overdue tickets count (due date is in the past and not Done)
+    const overdueJql = `project = ${projectKey} AND due < now() AND statusCategory != Done`;
+    
+    const overdueResponse = await JiraClient.searchIssues({
+      jql: overdueJql,
+      maxResults: 100,
+      fields: ['key']
+    });
+    
+    const overdueCount = overdueResponse.ok && overdueResponse.data?.issues
+      ? overdueResponse.data.issues.length
+      : 0;
+    
+    // Get open tickets count (all tickets not in Done status)
+    const openJql = `project = ${projectKey} AND statusCategory != Done`;
+    
+    const openResponse = await JiraClient.searchIssues({
+      jql: openJql,
+      maxResults: 100,
+      fields: ['key']
+    });
+    
+    const openTickets = openResponse.ok && openResponse.data?.issues
+      ? openResponse.data.issues.length
+      : 0;
+    
     const result = {
       untriagedCount,
       todayProcessed: todayProcessedCount,
-      timeSaved: 78, // Mock data - will be calculated based on historical data
+      overdueCount,
+      openTickets,
       aiAccuracy: 94  // Mock data - will be calculated based on feedback
     };
     
@@ -107,7 +179,8 @@ dashboardResolver.define('getStatistics', async (req) => {
     return {
       untriagedCount: 0,
       todayProcessed: 0,
-      timeSaved: 0,
+      overdueCount: 0,
+      openTickets: 0,
       aiAccuracy: 0
     };
   }
@@ -214,7 +287,12 @@ dashboardResolver.define('searchTickets', async (req) => {
  * Trigger AI triage analysis (Dashboard)
  * Uses Rovo Agent to classify ticket, suggest assignee, and find similar tickets
  */
+/**
+ * Run AI Triage using Forge LLM
+ * Uses Atlassian-hosted LLMs for ticket classification and assignee suggestion
+ */
 dashboardResolver.define('runAITriage', async (req) => {
+  const timestamp = new Date().toISOString();
   const payload = req.payload as { 
     issueKey: string;
     summary: string;
@@ -229,93 +307,137 @@ dashboardResolver.define('runAITriage', async (req) => {
     throw new Error('Missing required parameters: issueKey or summary');
   }
   
+  console.log('[runAITriage] Starting with Forge LLM', { issueKey, timestamp });
+  
   try {
-    // Step 1: Classify the ticket
-    const classification = await RovoAgent.classifyTicket({
-      summary,
-      description: description || '',
-      reporter: reporter || 'Unknown',
-      created: created || new Date().toISOString()
-    });
-    
-    // Step 2: Get assignable users for the project
-    if (!req.context || !req.context.extension || !req.context.extension.project || !req.context.extension.project.key) {
-      throw new Error('Project key is missing from request context. Cannot proceed with AI triage.');
+    // Get project key from context
+    if (!req.context?.extension?.project?.key) {
+      throw new Error('Project key is missing from request context');
     }
     const projectKey = req.context.extension.project.key;
-    const usersResponse = await JiraClient.getAssignableUsers(projectKey, 50);
     
-    // Calculate current workload for each user
-    const availableAgents = [];
+    // Get project members for assignee suggestion
+    const usersResponse = await JiraClient.getAssignableUsers(projectKey, 50);
+    const projectMembers = [];
+    
     if (usersResponse.ok && usersResponse.data) {
-      for (const user of usersResponse.data) {
-        const currentLoad = await calculateUserWorkload(user.accountId, projectKey);
-        
-        availableAgents.push({
-          name: user.displayName,
-          id: user.accountId,
-          skills: [],
-          currentLoad
+      // Filter active users and calculate workload
+      const activeUsers = usersResponse.data.filter(user => user.active === true);
+      
+      for (const user of activeUsers) {
+        const ticketCount = await calculateUserWorkload(user.accountId, projectKey);
+        projectMembers.push({
+          accountId: user.accountId,
+          displayName: user.displayName,
+          ticketCount
         });
       }
     }
     
-    // Step 3 & 4: Run assignee suggestion and similar ticket search in parallel
-    const [assigneeSuggestion, similarAnalysis] = await Promise.all([
-      RovoAgent.suggestAssignee({
+    console.log('[runAITriage] Project members loaded:', projectMembers.length);
+    
+    // Perform complete triage using Forge LLM
+    const triageResult = await ForgeLlmTriage.performCompleteTriage(
+      {
+        issueKey,
+        summary,
+        description: description || '',
+        reporter: reporter || 'Unknown',
+        created: created || new Date().toISOString()
+      },
+      projectMembers
+    );
+    
+    console.log('[runAITriage] Forge LLM triage completed', {
+      issueKey,
+      category: triageResult.category,
+      priority: triageResult.priority,
+      confidence: triageResult.confidence,
+      assignee: triageResult.suggestedAssignee?.name || 'None'
+    });
+    
+    // Return in the expected format
+    return {
+      category: triageResult.category,
+      subCategory: triageResult.subCategory,
+      priority: triageResult.priority,
+      urgency: triageResult.urgency,
+      confidence: triageResult.confidence,
+      reasoning: triageResult.reasoning,
+      tags: [],
+      suggestedAssignee: {
+        name: triageResult.suggestedAssignee?.name || null,
+        id: triageResult.suggestedAssignee?.id || null,
+        reason: triageResult.assigneeReason,
+        estimatedTime: null,
+        confidence: triageResult.assigneeConfidence,
+        alternatives: []
+      },
+      similarTickets: [],
+      suggestedActions: [],
+      source: 'forge-llm'
+    };
+  } catch (error) {
+    console.error('[runAITriage] Forge LLM triage failed:', error);
+    
+    // Fallback to keyword-based classification
+    console.log('[runAITriage] Using keyword-based fallback', { issueKey });
+    
+    try {
+      const classification = await RovoAgent.classifyTicket({
+        summary,
+        description: description || '',
+        reporter: reporter || 'Unknown',
+        created: created || new Date().toISOString()
+      });
+      
+      const projectKey = req.context.extension.project.key;
+      const usersResponse = await JiraClient.getAssignableUsers(projectKey, 50);
+      
+      const availableAgents = [];
+      if (usersResponse.ok && usersResponse.data) {
+        for (const user of usersResponse.data) {
+          const currentLoad = await calculateUserWorkload(user.accountId, projectKey);
+          availableAgents.push({
+            name: user.displayName,
+            id: user.accountId,
+            skills: [],
+            currentLoad
+          });
+        }
+      }
+      
+      const assigneeSuggestion = await RovoAgent.suggestAssignee({
         category: classification.category,
         subCategory: classification.subCategory,
         availableAgents,
         historicalData: []
-      }),
-      (async () => {
-        const similarTicketsResponse = await JiraClient.searchIssues({
-          jql: `project = ${projectKey} AND status = Resolved ORDER BY created DESC`,
-          maxResults: 10,
-          fields: ['summary', 'description', 'resolution', 'resolutiondate', 'created']
-        });
-        
-        const pastTickets = similarTicketsResponse.ok && similarTicketsResponse.data ? 
-          similarTicketsResponse.data.issues.map(issue => ({
-            id: issue.key,
-            summary: issue.fields.summary,
-            description: issue.fields.description || '',
-            resolution: issue.fields.resolution?.name || 'Resolved',
-            resolutionTime: issue.fields.resolutiondate || issue.fields.created
-          })) : [];
-        
-        return RovoAgent.findSimilarTickets({
-          currentTicket: {
-            summary,
-            description: description || ''
-          },
-          pastTickets
-        });
-      })()
-    ]);
-    
-    return {
-      category: classification.category,
-      subCategory: classification.subCategory,
-      priority: classification.priority,
-      urgency: classification.urgency,
-      confidence: classification.confidence,
-      reasoning: classification.reasoning,
-      tags: classification.tags,
-      suggestedAssignee: {
-        name: assigneeSuggestion.assignee,
-        id: assigneeSuggestion.assigneeId,
-        reason: assigneeSuggestion.reason,
-        estimatedTime: assigneeSuggestion.estimatedTime,
-        confidence: assigneeSuggestion.confidence,
-        alternatives: assigneeSuggestion.alternatives
-      },
-      similarTickets: similarAnalysis.similarTickets,
-      suggestedActions: similarAnalysis.suggestedActions
-    };
-  } catch (error) {
-    console.error('Error in runAITriage:', error);
-    throw new Error('AI triage analysis failed. Please try again.');
+      });
+      
+      return {
+        category: classification.category,
+        subCategory: classification.subCategory,
+        priority: classification.priority,
+        urgency: classification.urgency,
+        confidence: classification.confidence,
+        reasoning: classification.reasoning + ' (keyword-based fallback)',
+        tags: classification.tags,
+        suggestedAssignee: {
+          name: assigneeSuggestion.assignee,
+          id: assigneeSuggestion.assigneeId,
+          reason: assigneeSuggestion.reason,
+          estimatedTime: assigneeSuggestion.estimatedTime,
+          confidence: assigneeSuggestion.confidence,
+          alternatives: assigneeSuggestion.alternatives
+        },
+        similarTickets: [],
+        suggestedActions: [],
+        source: 'keyword-fallback'
+      };
+    } catch (fallbackError) {
+      console.error('[runAITriage] Fallback also failed:', fallbackError);
+      throw new Error('AI triage analysis failed. Please try again.');
+    }
   }
 });
 
@@ -354,7 +476,7 @@ dashboardResolver.define('applyTriageResult', async (req) => {
     }
     
     if (assigneeId) {
-      updateFields.assignee = { id: assigneeId };
+      updateFields.assignee = { accountId: assigneeId };
     }
     
     const labels: string[] = [];
@@ -371,8 +493,35 @@ dashboardResolver.define('applyTriageResult', async (req) => {
     
     const updateResponse = await JiraClient.updateIssue(issueKey, updateFields);
     
+    console.log('[applyTriageResult] Update response:', {
+      ok: updateResponse.ok,
+      status: updateResponse.status,
+      error: updateResponse.error,
+      updateFields
+    });
+    
     if (!updateResponse.ok) {
-      throw new Error('Failed to update issue');
+      // Check if the error is about assignee permissions
+      const errorObj = updateResponse.error as any;
+      if (errorObj?.errors?.assignee) {
+        console.warn('[applyTriageResult] Assignee error, retrying without assignee:', errorObj.errors.assignee);
+        
+        // Retry without assignee
+        const { assignee, ...fieldsWithoutAssignee } = updateFields;
+        const retryResponse = await JiraClient.updateIssue(issueKey, fieldsWithoutAssignee);
+        
+        if (!retryResponse.ok) {
+          throw new Error(`Failed to update issue: ${JSON.stringify(retryResponse.error)}`);
+        }
+        
+        return {
+          success: true,
+          message: 'Triage result applied successfully (assignee skipped due to permissions)',
+          warning: 'Could not assign user due to permissions'
+        };
+      }
+      
+      throw new Error(`Failed to update issue: ${JSON.stringify(updateResponse.error)}`);
     }
     
     return {

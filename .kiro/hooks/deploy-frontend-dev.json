@@ -1,0 +1,11 @@
+{
+  "name": "フロントエンドデプロイ (Development)",
+  "description": "React アプリをビルドして Development 環境にデプロイします",
+  "trigger": {
+    "type": "manual"
+  },
+  "action": {
+    "type": "command",
+    "command": "cd static/dashboard && npm run build && cd ../.. && npm run build && forge deploy --environment development --non-interactive"
+  }
+}

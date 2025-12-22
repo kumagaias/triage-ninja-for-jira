@@ -1,0 +1,11 @@
+{
+  "name": "バックエンドデプロイ (Production)",
+  "description": "TypeScript をビルドして Production 環境にデプロイします",
+  "trigger": {
+    "type": "manual"
+  },
+  "action": {
+    "type": "command",
+    "command": "npm run build && forge deploy --environment production --non-interactive"
+  }
+}
