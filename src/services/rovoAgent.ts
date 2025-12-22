@@ -221,6 +221,7 @@ Respond in the following JSON format:
     }
     
     // Try to find similar resolved tickets to boost confidence
+    // Note: This only works in user context (not in Trigger context)
     try {
       const projectKey = input.issueKey?.split('-')[0];
       if (projectKey && category !== 'Other') {
@@ -255,8 +256,11 @@ Respond in the following JSON format:
           }
         }
       }
-    } catch (historyError) {
-      console.warn('Failed to fetch historical data, continuing with keyword-based classification:', historyError);
+    } catch (historyError: any) {
+      // Silently skip historical data if not available (e.g., in Trigger context)
+      if (historyError?.errorCode !== 'AUTH_TYPE_UNAVAILABLE') {
+        console.warn('Failed to fetch historical data, continuing with keyword-based classification:', historyError);
+      }
     }
     
     const result = {
