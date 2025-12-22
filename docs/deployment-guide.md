@@ -131,13 +131,15 @@ forge logs --environment production --tail
 - [ ] Loading states work correctly
 - [ ] Error messages are user-friendly
 
-### Rovo Actions
+### Forge LLM Integration
 
-- [ ] `analyze-ticket-classification` action is available
-- [ ] `suggest-ticket-assignee` action is available
-- [ ] `find-similar-tickets` action is available
-- [ ] Actions can be invoked from Jira Automation
-- [ ] Actions return expected JSON structure
+- [ ] Forge LLM module is enabled in manifest.yml
+- [ ] EAP (Early Access Program) approval received
+- [ ] AI triage completes successfully
+- [ ] Classification results are accurate
+- [ ] Assignee suggestions are relevant
+- [ ] Similar tickets are found correctly
+- [ ] Fallback logic activates when LLM fails
 
 ### Automation Rules
 
@@ -180,10 +182,11 @@ forge logs --environment production | grep "ERROR"
    - No deployment errors
    - Installation upgrade successful
 
-2. **Action Invocations**
-   - Actions are being called
-   - Response times are acceptable (< 3s)
+2. **Forge LLM Performance**
+   - AI triage completes successfully
+   - Response times are acceptable (< 5s)
    - Success rate > 90%
+   - Token usage within limits
 
 3. **Error Rates**
    - Error rate < 5%
@@ -192,7 +195,7 @@ forge logs --environment production | grep "ERROR"
 
 4. **User Experience**
    - UI loads quickly (< 1s)
-   - Results appear within 30s
+   - Results appear within 10s
    - No UI errors or crashes
 
 ## Rollback Procedure
@@ -242,13 +245,14 @@ forge install --upgrade --non-interactive \
 
 ### Actions Not Available
 
-**Symptom**: Rovo Actions don't appear in Jira Automation
+**Symptom**: Forge LLM not working, "LLM extension isn't enabled" error
 
 **Solutions**:
-1. Verify deployment was successful
-2. Check manifest.yml has correct action definitions
-3. Verify Rovo Agent is enabled in your Atlassian instance
-4. Wait 5-10 minutes for actions to propagate
+1. Verify EAP (Early Access Program) approval received
+2. Check email for approval from Atlassian
+3. Wait 24-48 hours after registration
+4. Verify manifest.yml has `llm` module configured
+5. Redeploy after receiving approval
 
 ### UI Not Loading
 
@@ -262,13 +266,14 @@ forge install --upgrade --non-interactive \
 
 ### Metrics Not Appearing
 
-**Symptom**: No metrics logs in Forge logs
+**Symptom**: No AI triage results or logs
 
 **Solutions**:
-1. Verify metricsTracker is imported in rovoAgent.ts
-2. Check if actions are being invoked
-3. Wait 1 hour for first metrics log
-4. Manually trigger: `metricsTracker.logMetrics()`
+1. Verify Forge LLM is enabled (EAP approved)
+2. Check if `forgeLlmTriage.ts` is properly imported
+3. Check Forge logs for LLM errors
+4. Verify token limits not exceeded
+5. Test with simple ticket first
 
 ## Post-Deployment Tasks
 
@@ -339,7 +344,8 @@ forge install --upgrade --non-interactive \
 
 ## Related Documentation
 
-- [Rovo Integration Guide](./rovo-integration.md)
+- [Forge LLM Integration Guide](./forge-llm-rovo-integration.md)
+- [Forge LLM Pricing](./forge-llm-pricing.md)
 - [Testing Guide](./testing-guide.md)
 - [Automation Rules](./automation-rules.md)
 - [Forge Documentation](https://developer.atlassian.com/platform/forge/)

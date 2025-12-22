@@ -37,53 +37,42 @@ TriageNinja automates ticket triage using AI, reducing manual work by 80% and im
 - **Manual Triage**: On-demand analysis via button click
 - **Fallback Logic**: Keyword-based triage when AI is unavailable
 
-## Rovo Agent Integration
+## Forge LLM (Rovo) Integration
 
-TriageNinja uses **Atlassian Rovo Agent** for intelligent ticket analysis through three specialized actions:
+TriageNinja uses **Forge LLM** (powered by Atlassian Rovo) for intelligent ticket analysis:
 
-### 1. Ticket Classification
-- Analyzes ticket summary and description
-- Determines category and subcategory
-- Recommends priority and urgency
-- Provides confidence score and reasoning
-
-### 2. Assignee Suggestion
-- Evaluates team member workload
-- Matches skills to ticket category
-- Considers historical assignment patterns
-- Recommends best assignee with alternatives
-
-### 3. Similar Ticket Search
-- Searches resolved tickets with similar content
-- Calculates similarity scores
-- Provides resolution information
-- Suggests proven solutions
+### AI-Powered Analysis
+- **Ticket Classification**: Analyzes summary and description to determine category and priority
+- **Assignee Suggestion**: Recommends best assignee based on skills and workload
+- **Similar Ticket Search**: Finds related resolved tickets with solutions
+- **Confidence Scoring**: Provides confidence level for each recommendation
+- **Reasoning**: Explains the logic behind each suggestion
 
 ### How It Works
 
+**Manual Triage** (One-Click):
+```
+Button Click → Forge LLM API → AI Analysis → Update Ticket → Display Results
+```
+
 **Automatic Triage** (New Tickets):
 ```
-New Ticket Created → Jira Automation → Rovo Agent → Update Ticket
+New Ticket Created → Jira Automation → Forge LLM → Update Ticket
 ```
 
-**Manual Triage** (Existing Tickets):
-```
-Button Click → Add Label → Jira Automation → Rovo Agent → Update Ticket → Remove Label
-```
-
-**Fallback** (When Rovo Unavailable):
+**Fallback** (When LLM Unavailable):
 ```
 Error Detected → Keyword-Based Classification → Update Ticket
 ```
 
-For detailed setup instructions, see [Rovo Integration Guide](docs/rovo-integration.md).
+For detailed technical information, see [Forge LLM Integration Guide](docs/forge-llm-rovo-integration.md).
 
 ## Tech Stack
 
 - **Platform**: Atlassian Forge (Serverless)
 - **Frontend**: React 18 + Custom UI
 - **Backend**: Node.js 22.x + TypeScript
-- **AI**: Atlassian Rovo Agent (GPT-4 powered)
+- **AI**: Forge LLM (Rovo Chat) - Claude 3.5 Sonnet
 - **Storage**: Forge Storage API
 - **APIs**: Jira REST API v3
 - **Testing**: Jest + Playwright
@@ -99,14 +88,14 @@ TriageNinja is built on **Atlassian Forge**, which means:
 ✅ **Easy to Install**: One-click installation from Marketplace  
 ✅ **Always Up-to-date**: Automatic updates with zero downtime
 
-### AI-Powered by Rovo
+### AI-Powered by Forge LLM (Rovo)
 
-TriageNinja leverages **Atlassian Rovo Agent** for intelligent analysis:
+TriageNinja leverages **Forge LLM** (Atlassian Rovo Chat) for intelligent analysis:
 
-- **Natural Language Understanding**: Analyzes ticket descriptions and comments
+- **Natural Language Understanding**: Analyzes ticket descriptions and comments using Claude 3.5 Sonnet
 - **Context-Aware**: Considers project history and team expertise
-- **Continuous Learning**: Improves accuracy over time
-- **Multi-Task Execution**: Parallel processing for faster results
+- **Structured Output**: Returns JSON-formatted analysis for reliable parsing
+- **Fast Response**: Typically completes analysis in under 3 seconds
 
 ## Requirements
 
@@ -308,7 +297,7 @@ TriageNinja follows Atlassian's security best practices:
 
 - `jira:projectPage` - Dashboard view for project-level statistics
 - `jira:issuePanel` - AI Triage panel on issue detail page
-- `rovo:agent` - AI analysis engine with multiple tasks
+- `llm` - Forge LLM module for AI-powered analysis (Claude 3.5 Sonnet)
 
 ## Usage
 
@@ -380,7 +369,7 @@ TriageNinja follows Atlassian's security best practices:
 - [x] Dashboard with statistics
 - [x] Issue panel with AI triage button
 - [x] Jira API integration
-- [x] Rovo Agent integration
+- [x] Forge LLM (Rovo) integration
 - [x] AI-powered ticket classification
 - [x] Smart assignee matching
 - [x] Similar ticket search
@@ -395,7 +384,7 @@ This project was created for **Atlassian Codegeist 2025** hackathon.
 
 ### Awards Targeting
 
-- 🏆 **Advanced AI Integration**: Leverages Rovo Agent for multi-task AI analysis
+- 🏆 **Advanced AI Integration**: Leverages Forge LLM (Rovo) for intelligent AI analysis
 - 🏆 **Platform Excellence**: 100% serverless on Forge platform
 
 ### Demo Video
@@ -426,8 +415,8 @@ MIT License - see [LICENSE](LICENSE) file for details
 
 ## Acknowledgments
 
-- Built with ❤️ using **Atlassian Forge** and **Rovo Agent**
-- Powered by **GPT-4** for intelligent analysis
+- Built with ❤️ using **Atlassian Forge** and **Forge LLM (Rovo)**
+- Powered by **Claude 3.5 Sonnet** for intelligent analysis
 - Inspired by the need to reduce manual triage work
 - Thanks to the Atlassian Developer Community
 

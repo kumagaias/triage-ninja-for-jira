@@ -16,31 +16,35 @@
 - Platform: Atlassian Forge
 - Frontend: React + Forge UI Kit (@forge/react)
 - Backend: Node.js + TypeScript
-- AI: Rovo Agent + Jira Automation
+- AI: Forge LLM (Rovo Chat) - Claude 3.5 Sonnet
 - Testing: Jest, Playwright
 
 ## Architecture
 
 ### Three-Tier Triage System
 
-1. **Automatic**: Jira Automation + Rovo Agent (on ticket creation)
-2. **Manual**: UI Button → Label → Jira Automation + Rovo Agent
+1. **Automatic**: Jira Automation + Forge LLM (on ticket creation)
+2. **Manual**: UI Button → Forge LLM API → Update ticket
 3. **Fallback**: Keyword-based logic (emergency only)
 
-### Rovo Agent Integration
+### Forge LLM Integration
 
-**Key Finding**: Rovo Agent cannot be called directly from resolvers. Use Jira Automation.
+**Key Technology**: Forge LLM (`@forge/llm`) is Atlassian's Rovo Chat API.
 
-**Rovo Actions** (3 actions):
-- `analyze-ticket-classification`: Fetch ticket data for AI
-- `suggest-ticket-assignee`: Fetch agents with workload/skills
-- `find-similar-tickets`: Search similar resolved tickets
+**Implementation**:
+- Direct API calls from resolvers using `chat()` function
+- Structured prompts for classification, assignee suggestion, and similar ticket search
+- JSON-formatted responses for reliable parsing
+- Fallback to keyword-based logic on errors
 
-**Jira Automation Rules**:
-1. **Auto-Triage**: Trigger on issue created → Invoke Rovo → Update ticket
-2. **Manual Triage**: Trigger on label "run-ai-triage" → Invoke Rovo → Update ticket → Remove label
+**Model**: Claude 3.5 Sonnet (via `model: 'claude'` in manifest.yml)
 
-**Frontend**: Button adds label, polls for completion (label removed)
+**EAP Requirements**:
+- Early Access Program approval required
+- Free until 2026-01-01
+- Register at: https://go.atlassian.com/signup-forge-llms
+
+**Frontend**: Button triggers resolver → Forge LLM → Display results
 
 ## Forge Specifics
 
@@ -50,25 +54,14 @@
 modules:
   jira:issuePanel:
     - key: triageninja-issue-panel
+  
+  llm:
+    - key: triageninja-llm
+      model: claude
 
 function:
   - key: resolver
     handler: index.handler
-
-rovo:agent:
-  - key: triageninja-agent
-    actions:
-      - analyze-ticket-classification
-      - suggest-ticket-assignee
-      - find-similar-tickets
-
-action:
-  - key: analyze-ticket-classification
-    function: analyzeTicketClassification
-  - key: suggest-ticket-assignee
-    function: suggestTicketAssignee
-  - key: find-similar-tickets
-    function: findSimilarTickets
 
 permissions:
   scopes:
@@ -117,28 +110,27 @@ interface ClassificationResult {
   priority: 'High' | 'Medium' | 'Low';
   urgency: 'Urgent' | 'Normal';
   confidence: number; // 0-100
-  source: 'rovo-agent' | 'keyword-based';
+  source: 'forge-llm-rovo' | 'keyword-based';
 }
 
 interface AssigneeSuggestion {
   assignee: { accountId: string; displayName: string };
   reason: string;
   confidence: number;
-  source: 'rovo-agent' | 'workload-based';
+  source: 'forge-llm-rovo' | 'workload-based';
 }
 ```
 
 ## Error Handling
 
 ```typescript
-// Rovo Agent with fallback
-async function invokeRovoAgent(issueKey: string) {
+// Forge LLM with fallback
+async function performAITriage(issueKey: string) {
   try {
-    await addLabelToIssue(issueKey, 'run-ai-triage');
-    await pollForCompletion(issueKey);
-    return await fetchUpdatedIssue(issueKey);
+    const result = await ForgeLlmTriage.performCompleteTriage(issueKey);
+    return result;
   } catch (error) {
-    console.error('Rovo Agent failed:', error);
+    console.error('Forge LLM failed:', error);
     return await classifyTicketFallback(issueKey);
   }
 }
@@ -247,16 +239,17 @@ console.log('Ticket classified', {
   issueKey: 'SUP-123',
   category: 'Network',
   confidence: 85,
-  source: 'rovo-agent',
+  source: 'forge-llm-rovo',
   timestamp: new Date().toISOString()
 });
 ```
 
 **Key Metrics:**
-- Rovo Agent success rate
+- Forge LLM success rate
 - Fallback usage rate
 - Average confidence scores
 - Response time
+- Token usage
 
 ## Performance
 
