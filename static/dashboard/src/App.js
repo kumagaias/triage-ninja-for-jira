@@ -463,10 +463,8 @@ function App() {
 
         {/* Filters */}
         <div style={{
-          padding: '15px',
+          padding: '15px 0',
           marginBottom: '20px',
-          borderRadius: '3px',
-          border: `1px solid ${theme.border}`,
           display: 'flex',
           gap: '15px',
           flexWrap: 'wrap',
@@ -801,7 +799,7 @@ function App() {
         fontSize: '12px',
         color: theme.textSecondary
       }}>
-        TriageNinja v6.43.0 (Production)
+        TriageNinja v6.44.0 (Production)
       </div>
     </div>
   );
@@ -1446,6 +1444,28 @@ function TicketRow({ ticket, t, theme, onTriageClick }) {
           }}
         >
           {t.triageButton}
+        </button>
+        
+        {/* Rovo Button - Calls backend directly */}
+        <button
+          onClick={(e) => {
+            e.stopPropagation();
+            onTriageClick(); // Same as Triage button - uses backend Rovo Agent
+          }}
+          aria-label={`Ask Rovo about ${ticket.key}`}
+          style={{
+            padding: '6px 12px',
+            backgroundColor: '#6554C0',
+            color: 'white',
+            border: 'none',
+            borderRadius: '3px',
+            fontSize: '12px',
+            cursor: 'pointer',
+            fontWeight: '500',
+            transition: 'background-color 0.2s'
+          }}
+        >
+          🤖 Rovo
         </button>
       </div>
     </div>
