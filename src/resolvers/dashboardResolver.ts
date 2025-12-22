@@ -481,6 +481,7 @@ dashboardResolver.define('runAITriage', async (req) => {
     
     try {
       const classification = await RovoAgent.classifyTicket({
+        issueKey,
         summary,
         description: description || '',
         reporter: reporter || 'Unknown',

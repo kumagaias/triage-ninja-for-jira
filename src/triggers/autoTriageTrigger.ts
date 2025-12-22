@@ -73,6 +73,7 @@ export async function autoTriageTriggerHandler(event: any, context: any) {
     console.log('[autoTriageTrigger] Classifying ticket');
     
     const classification = await RovoAgent.classifyTicket({
+      issueKey,
       summary: issue.fields.summary,
       description: issue.fields.description || '',
       reporter: issue.fields.reporter?.displayName || 'Unknown',

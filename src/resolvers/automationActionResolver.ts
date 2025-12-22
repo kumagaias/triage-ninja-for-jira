@@ -72,6 +72,7 @@ export async function automationAutoTriageHandler(
     console.log('[automationAutoTriage] Classifying ticket with Rovo Agent');
     
     const classification = await RovoAgent.classifyTicket({
+      issueKey,
       summary: issue.fields.summary,
       description: issue.fields.description || '',
       reporter: issue.fields.reporter?.displayName || 'Unknown',

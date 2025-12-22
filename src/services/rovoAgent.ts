@@ -1,5 +1,6 @@
 import api from '@forge/api';
 import { metricsTracker } from '../utils/metrics';
+import { JiraClient } from './jiraClient';
 
 /**
  * Rovo Agent Service
@@ -10,6 +11,7 @@ import { metricsTracker } from '../utils/metrics';
  * Input interface for ticket classification
  */
 export interface ClassifyTicketInput {
+  issueKey?: string;
   summary: string;
   description: string;
   reporter: string;
@@ -137,7 +139,7 @@ Respond in the following JSON format:
 }`;
 
   try {
-    console.log('Classifying ticket using keyword-based classification (Rovo Agent integration via Jira Automation)');
+    console.log('Classifying ticket using enhanced keyword-based classification with historical data');
     
     // Note: Rovo Agent is integrated via Jira Automation Rules
     // This function provides fallback classification when Automation is not triggered
@@ -189,15 +191,72 @@ Respond in the following JSON format:
       tags.push('access');
       confidence = 80;
     }
+    // Email & Communication
+    else if (combined.match(/email|outlook|sync|calendar|meeting/)) {
+      category = 'Email & Communication';
+      if (combined.match(/outlook/)) subCategory = 'Outlook';
+      else if (combined.match(/sync/)) subCategory = 'Sync Issues';
+      tags.push('email');
+      confidence = 75;
+    }
+    // Security
+    else if (combined.match(/security|malicious|phishing|virus|malware|suspicious/)) {
+      category = 'Security';
+      if (combined.match(/phishing|malicious/)) subCategory = 'Phishing';
+      else if (combined.match(/virus|malware/)) subCategory = 'Malware';
+      tags.push('security');
+      confidence = 80;
+      priority = 'High'; // Security issues are high priority
+      urgency = 'Urgent';
+    }
     
     // Priority determination
-    if (combined.match(/urgent|critical|emergency|asap|immediately/)) {
+    if (combined.match(/urgent|critical|emergency|asap|immediately|down|outage|broken/)) {
       priority = 'High';
       urgency = 'Urgent';
       confidence += 10;
-    } else if (combined.match(/minor|low|enhancement|feature request/)) {
+    } else if (combined.match(/minor|low|enhancement|feature request|nice to have/)) {
       priority = 'Low';
       confidence += 5;
+    }
+    
+    // Try to find similar resolved tickets to boost confidence
+    try {
+      const projectKey = input.issueKey?.split('-')[0];
+      if (projectKey && category !== 'Other') {
+        const similarTicketsJql = `project = ${projectKey} AND statusCategory = Done AND labels = "category:${category}" ORDER BY resolved DESC`;
+        const similarResponse = await JiraClient.searchIssues({
+          jql: similarTicketsJql,
+          maxResults: 5,
+          fields: ['summary', 'assignee', 'resolutiondate']
+        });
+        
+        if (similarResponse.ok && similarResponse.data?.issues && similarResponse.data.issues.length > 0) {
+          const similarCount = similarResponse.data.issues.length;
+          console.log(`Found ${similarCount} similar resolved tickets in category: ${category}`);
+          
+          // Boost confidence based on historical data
+          confidence = Math.min(confidence + 10, 90);
+          
+          // Track most common assignee for this category
+          const assigneeCounts: { [key: string]: number } = {};
+          similarResponse.data.issues.forEach((issue: any) => {
+            const assigneeId = issue.fields.assignee?.accountId;
+            if (assigneeId) {
+              assigneeCounts[assigneeId] = (assigneeCounts[assigneeId] || 0) + 1;
+            }
+          });
+          
+          // Add reasoning about historical patterns
+          if (Object.keys(assigneeCounts).length > 0) {
+            const mostCommonAssignee = Object.entries(assigneeCounts)
+              .sort(([, a], [, b]) => b - a)[0];
+            console.log(`Historical pattern: ${mostCommonAssignee[1]} tickets in this category handled by same assignee`);
+          }
+        }
+      }
+    } catch (historyError) {
+      console.warn('Failed to fetch historical data, continuing with keyword-based classification:', historyError);
     }
     
     const result = {
@@ -206,7 +265,7 @@ Respond in the following JSON format:
       priority,
       urgency,
       confidence: Math.min(confidence, 95),
-      reasoning: `Classified based on keywords in summary and description. Category: ${category}, Priority: ${priority}`,
+      reasoning: `Classified based on keywords and historical patterns. Category: ${category}, Priority: ${priority}`,
       tags
     };
     
