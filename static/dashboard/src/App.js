@@ -28,6 +28,7 @@ function App() {
   const [autoTriageEnabled, setAutoTriageEnabled] = useState(true);
   const [loadingAutoTriage, setLoadingAutoTriage] = useState(false);
   const [sortConfig, setSortConfig] = useState({ key: 'created', direction: 'desc' });
+  const [processedTimeRange, setProcessedTimeRange] = useState('today'); // 'today' or 'week'
   const [filters, setFilters] = useState({
     assignee: 'untriaged',
     status: 'open', // Default to 'open' tickets
@@ -415,12 +416,14 @@ function App() {
               theme={theme}
               onClick={() => setFilters({ assignee: 'all', status: 'overdue', dateRange: 'all' })}
             />
-            <StatCard
-              title="Processed"
-              value={`${statistics.todayProcessed} today`}
-              color="#36B37E"
+            <ProcessedStatCard
+              value={processedTimeRange === 'today' ? statistics.todayProcessed : statistics.weekProcessed}
+              timeRange={processedTimeRange}
+              onTimeRangeChange={(range) => {
+                setProcessedTimeRange(range);
+                setFilters({ assignee: 'all', status: 'done', dateRange: range });
+              }}
               theme={theme}
-              onClick={() => setFilters({ assignee: 'all', status: 'done', dateRange: 'today' })}
             />
           </>
         )}
@@ -799,7 +802,7 @@ function App() {
         fontSize: '12px',
         color: theme.textSecondary
       }}>
-        TriageNinja v6.45.0 (Production)
+        TriageNinja v6.46.0 (Production)
       </div>
     </div>
   );
@@ -1468,6 +1471,109 @@ function TicketRow({ ticket, t, theme, onTriageClick }) {
           🤖 Rovo
         </button>
       </div>
+    </div>
+  );
+}
+
+/**
+ * Processed Stat Card Component with Time Range Selector
+ * Allows switching between Today and Week views
+ */
+function ProcessedStatCard({ value, timeRange, onTimeRangeChange, theme }) {
+  const [showDropdown, setShowDropdown] = useState(false);
+  
+  return (
+    <div 
+      style={{
+        position: 'relative',
+        backgroundColor: theme.cardBackground,
+        borderRadius: '3px',
+        padding: '15px',
+        boxShadow: '0 1px 1px rgba(9,30,66,0.25)',
+        borderTop: '3px solid #36B37E',
+        minWidth: '150px',
+        cursor: 'pointer',
+        transition: 'transform 0.2s, box-shadow 0.2s'
+      }}
+      onClick={() => setShowDropdown(!showDropdown)}
+      onMouseEnter={(e) => {
+        e.currentTarget.style.transform = 'translateY(-2px)';
+        e.currentTarget.style.boxShadow = '0 4px 8px rgba(9,30,66,0.25)';
+      }}
+      onMouseLeave={(e) => {
+        e.currentTarget.style.transform = 'translateY(0)';
+        e.currentTarget.style.boxShadow = '0 1px 1px rgba(9,30,66,0.25)';
+      }}
+    >
+      <div style={{ fontSize: '12px', color: theme.textSecondary, marginBottom: '8px', fontWeight: '500', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+        <span>Processed</span>
+        <span style={{ fontSize: '10px' }}>▼</span>
+      </div>
+      <div style={{ 
+        fontSize: 'clamp(24px, 5vw, 32px)', 
+        fontWeight: 'bold', 
+        color: theme.textPrimary
+      }}>
+        {value}
+      </div>
+      <div style={{ fontSize: '11px', color: theme.textSecondary, marginTop: '4px' }}>
+        {timeRange === 'today' ? 'today' : 'this week'}
+      </div>
+      
+      {/* Dropdown Menu */}
+      {showDropdown && (
+        <div 
+          style={{
+            position: 'absolute',
+            top: '100%',
+            left: 0,
+            right: 0,
+            marginTop: '4px',
+            backgroundColor: theme.cardBackground,
+            border: `1px solid ${theme.border}`,
+            borderRadius: '3px',
+            boxShadow: '0 4px 8px rgba(9,30,66,0.25)',
+            zIndex: 1000
+          }}
+          onClick={(e) => e.stopPropagation()}
+        >
+          <div
+            onClick={() => {
+              onTimeRangeChange('today');
+              setShowDropdown(false);
+            }}
+            style={{
+              padding: '10px 15px',
+              cursor: 'pointer',
+              backgroundColor: timeRange === 'today' ? theme.background : 'transparent',
+              color: theme.textPrimary,
+              fontSize: '14px',
+              borderBottom: `1px solid ${theme.border}`
+            }}
+            onMouseEnter={(e) => e.currentTarget.style.backgroundColor = theme.background}
+            onMouseLeave={(e) => e.currentTarget.style.backgroundColor = timeRange === 'today' ? theme.background : 'transparent'}
+          >
+            ✓ Today
+          </div>
+          <div
+            onClick={() => {
+              onTimeRangeChange('week');
+              setShowDropdown(false);
+            }}
+            style={{
+              padding: '10px 15px',
+              cursor: 'pointer',
+              backgroundColor: timeRange === 'week' ? theme.background : 'transparent',
+              color: theme.textPrimary,
+              fontSize: '14px'
+            }}
+            onMouseEnter={(e) => e.currentTarget.style.backgroundColor = theme.background}
+            onMouseLeave={(e) => e.currentTarget.style.backgroundColor = timeRange === 'week' ? theme.background : 'transparent'}
+          >
+            ✓ This Week
+          </div>
+        </div>
+      )}
     </div>
   );
 }

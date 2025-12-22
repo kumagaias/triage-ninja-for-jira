@@ -128,13 +128,29 @@ dashboardResolver.define('getStatistics', async (req) => {
     // Search for tickets that were assigned today (assignee changed from empty to not empty)
     // This captures tickets that were triaged today
     const todayProcessedResponse = await JiraClient.searchIssues({
-      jql: `project = ${projectKey} AND assignee changed TO currentUser() AFTER "${todayStr}" OR assignee changed FROM EMPTY AFTER "${todayStr}"`,
+      jql: `project = ${projectKey} AND assignee changed FROM EMPTY AFTER "${todayStr}"`,
       maxResults: 100, // Get up to 100 tickets to count
       fields: ['key'] // Only need the key field
     });
     
     const todayProcessedCount = todayProcessedResponse.ok && todayProcessedResponse.data?.issues
       ? todayProcessedResponse.data.issues.length
+      : 0;
+    
+    // Get this week's processed tickets (assigned this week)
+    const weekAgo = new Date();
+    weekAgo.setDate(weekAgo.getDate() - 7);
+    weekAgo.setHours(0, 0, 0, 0);
+    const weekAgoStr = weekAgo.toISOString().split('T')[0];
+    
+    const weekProcessedResponse = await JiraClient.searchIssues({
+      jql: `project = ${projectKey} AND assignee changed FROM EMPTY AFTER "${weekAgoStr}"`,
+      maxResults: 100,
+      fields: ['key']
+    });
+    
+    const weekProcessedCount = weekProcessedResponse.ok && weekProcessedResponse.data?.issues
+      ? weekProcessedResponse.data.issues.length
       : 0;
     
     // Get overdue tickets count (due date is in the past and not Done)
@@ -166,6 +182,7 @@ dashboardResolver.define('getStatistics', async (req) => {
     const result = {
       untriagedCount,
       todayProcessed: todayProcessedCount,
+      weekProcessed: weekProcessedCount,
       overdueCount,
       openTickets,
       aiAccuracy: 94  // Mock data - will be calculated based on feedback
@@ -179,6 +196,7 @@ dashboardResolver.define('getStatistics', async (req) => {
     return {
       untriagedCount: 0,
       todayProcessed: 0,
+      weekProcessed: 0,
       overdueCount: 0,
       openTickets: 0,
       aiAccuracy: 0
