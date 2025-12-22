@@ -21,34 +21,13 @@ modules:
       title: TriageNinja
       icon: https://kumagaias.github.io/triage-ninja-for-jira/assets/triageninja-icon.png
 
-  # Rovo Agent for AI Analysis
-  rovo:agent:
-    - key: triageninja-agent
-      name: TriageNinja AI Agent
-      description: AI-powered ticket triage assistant for Jira Service Management
-      prompt: |
-        You are TriageNinja, an AI assistant specialized in Jira ticket triage.
+  # Forge LLM (Rovo) for AI-powered triage
+  llm:
+    - key: triageninja-llm
+      model:
+        - claude
 
-        Your capabilities:
-        1. Classify tickets into categories and subcategories
-        2. Determine priority (High/Medium/Low) and urgency (Urgent/Normal)
-        3. Suggest optimal assignees based on skills and workload
-        4. Find similar past tickets and their solutions
-
-        When analyzing tickets:
-        - Consider the summary and description carefully
-        - Look for keywords indicating urgency or priority
-        - Match categories based on technical domains (Network, Hardware, Software, etc.)
-        - Provide confidence scores (0-100) for your recommendations
-        - Always explain your reasoning
-
-        Respond in JSON format as specified in each request.
-      actions:
-        - analyze-ticket-classification
-        - suggest-ticket-assignee
-        - find-similar-tickets
-
-  # Rovo Actions
+  # Rovo Actions (kept for compatibility)
   action:
     # Automation Action for Auto-Triage
     - key: auto-triage-action
@@ -56,14 +35,13 @@ modules:
       function: automation-auto-triage
       actionVerb: UPDATE
       actionType: automation
-      description: Automatically classify and assign tickets using Rovo Agent AI
+      description: Automatically classify and assign tickets using Forge LLM AI
       inputs:
         issueKey:
           title: Issue Key
           type: string
           required: true
-          description: "The Jira issue key (e.g., SUP-123). Use {{issue.key}} in
-            Automation rules."
+          description: "The Jira issue key (e.g., SUP-123). Use {{issue.key}} in Automation rules."
       outputs:
         category:
           description: "The classified category"
@@ -82,54 +60,6 @@ modules:
           type: number
           nullable: false
 
-    # Rovo Agent Actions
-    - key: analyze-ticket-classification
-      name: Analyze Ticket Classification
-      function: analyze-classification
-      actionVerb: GET
-      description: |
-        Analyze a Jira ticket and determine its category, subcategory, 
-        priority, and urgency based on the summary and description.
-      inputs:
-        issueKey:
-          title: Issue Key
-          type: string
-          required: true
-          description: "The Jira issue key (e.g., SUP-123)"
-
-    - key: suggest-ticket-assignee
-      name: Suggest Ticket Assignee
-      function: suggest-assignee
-      actionVerb: GET
-      description: |
-        Suggest the best assignee for a ticket based on category, 
-        team member skills, current workload, and historical performance.
-      inputs:
-        issueKey:
-          title: Issue Key
-          type: string
-          required: true
-          description: "The Jira issue key"
-        category:
-          title: Category
-          type: string
-          required: true
-          description: "The ticket category"
-
-    - key: find-similar-tickets
-      name: Find Similar Tickets
-      function: find-similar
-      actionVerb: GET
-      description: |
-        Find similar past tickets based on summary and description 
-        to help with resolution.
-      inputs:
-        issueKey:
-          title: Issue Key
-          type: string
-          required: true
-          description: "The Jira issue key"
-
   # Resolver Functions
   function:
     - key: dashboard-resolver
@@ -142,12 +72,6 @@ modules:
       handler: index.autoTriageTriggerHandler
     - key: automation-auto-triage
       handler: index.automationAutoTriageHandler
-    - key: analyze-classification
-      handler: index.analyzeTicketClassification
-    - key: suggest-assignee
-      handler: index.suggestTicketAssignee
-    - key: find-similar
-      handler: index.findSimilarTickets
 
 resources:
   - key: dashboard
@@ -159,6 +83,15 @@ permissions:
     - write:jira-work
     - read:jira-user
     - storage:app
+    # Automation-related scopes (testing)
+    - manage:jira-configuration
+    - manage:jira-project
+    - manage:jira-webhook
+    - read:webhook:jira
+    - write:webhook:jira
+    - delete:webhook:jira
+    - read:workflow:jira
+    - write:workflow:jira
 app:
   runtime:
     name: nodejs22.x

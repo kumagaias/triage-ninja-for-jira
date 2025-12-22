@@ -16,10 +16,3 @@ export { autoTriageTriggerHandler } from './triggers/autoTriageTrigger';
 
 // Export Automation Action handler
 export { automationAutoTriageHandler } from './resolvers/automationActionResolver';
-
-// Export Rovo actions
-export {
-  analyzeTicketClassification,
-  suggestTicketAssignee,
-  findSimilarTickets
-} from './actions/rovoActions';

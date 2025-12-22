@@ -319,7 +319,7 @@ function App() {
         </div>
         
         {/* Auto-Triage Toggle and AI Accuracy - Right side */}
-        <div style={{ zIndex: 1, display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: '10px' }}>
+        <div style={{ zIndex: 1, display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: '8px' }}>
           {/* Auto-Triage Toggle */}
           <label style={{
             display: 'flex',
@@ -591,7 +591,7 @@ function App() {
               fontWeight: 'bold',
               fontSize: '12px',
               color: theme.textSecondary,
-              minWidth: '1100px'
+              minWidth: '1050px'
             }}>
               <div 
                 onClick={() => handleSort('key')}
@@ -603,7 +603,7 @@ function App() {
                 style={{ flex: '1 1 auto', cursor: 'pointer', userSelect: 'none' }}>
                 {t.summary || 'Summary'} {sortConfig.key === 'summary' && (sortConfig.direction === 'asc' ? '↑' : '↓')}
               </div>
-              <div style={{ flex: '0 0 150px' }}>
+              <div style={{ flex: '0 0 100px' }}>
                 Action
               </div>
               <div 
@@ -787,6 +787,9 @@ function App() {
         <div style={{ marginTop: '15px', paddingTop: '15px', borderTop: `1px solid ${theme.border}` }}>
           {/* Test Tickets Section */}
           <div>
+            <div style={{ fontSize: '12px', color: theme.textSecondary, marginBottom: '8px' }}>
+              Create sample tickets for testing:
+            </div>
             <TestTicketButton t={t} onTicketsCreated={() => window.location.reload()} />
           </div>
         </div>
@@ -799,7 +802,7 @@ function App() {
         fontSize: '12px',
         color: theme.textSecondary
       }}>
-        TriageNinja v6.50.0 (Production)
+        TriageNinja v7.0.0 (Production) - Powered by Forge LLM (Rovo)
       </div>
     </div>
   );
@@ -808,6 +811,7 @@ function App() {
 /**
  * Triage Modal Component
  * Displays AI triage results and allows applying them
+ * Automatically uses Forge LLM (Rovo) for AI-powered analysis
  */
 function TriageModal({ ticket, onClose, onSuccess, theme, t }) {
   const [loading, setLoading] = useState(false);
@@ -823,7 +827,7 @@ function TriageModal({ ticket, onClose, onSuccess, theme, t }) {
       setWarning(null);
       
       try {
-        // Run AI triage
+        // Run AI triage (backend automatically uses Rovo if available, otherwise keyword-based)
         const triageResult = await invoke('runAITriage', {
           issueKey: ticket.key,
           summary: ticket.fields.summary,
@@ -833,6 +837,13 @@ function TriageModal({ ticket, onClose, onSuccess, theme, t }) {
         });
         
         setResult(triageResult);
+        
+        // Display which method was used
+        if (triageResult.source === 'forge-llm-rovo') {
+          console.log('✅ Triage completed using Forge LLM (Rovo)');
+        } else if (triageResult.source === 'keyword-fallback') {
+          console.log('⚠️ Triage completed using keyword-based fallback');
+        }
       } catch (err) {
         console.error('Failed to run AI triage:', err);
         setError(err.message || 'Failed to run AI triage');
@@ -902,9 +913,49 @@ function TriageModal({ ticket, onClose, onSuccess, theme, t }) {
         boxShadow: '0 8px 16px rgba(0,0,0,0.3)'
       }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
-          <h2 style={{ margin: 0, color: theme.textPrimary }}>
-            {t.aiTriage || 'AI Triage'}: {ticket.key}
-          </h2>
+          <div>
+            <h2 style={{ margin: 0, color: theme.textPrimary }}>
+              {t.aiTriage || 'AI Triage'}: {ticket.key}
+            </h2>
+            {result && (
+              <div style={{ 
+                fontSize: '11px', 
+                color: theme.textSecondary, 
+                marginTop: '4px',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '6px'
+              }}>
+                {result.source === 'forge-llm-rovo' ? (
+                  <>
+                    <span style={{ 
+                      padding: '2px 6px', 
+                      backgroundColor: '#E3FCEF', 
+                      color: '#006644',
+                      borderRadius: '3px',
+                      fontWeight: '500'
+                    }}>
+                      🤖 Forge LLM (Rovo)
+                    </span>
+                    <span>AI-powered analysis</span>
+                  </>
+                ) : (
+                  <>
+                    <span style={{ 
+                      padding: '2px 6px', 
+                      backgroundColor: '#FFF4E5', 
+                      color: '#974F0C',
+                      borderRadius: '3px',
+                      fontWeight: '500'
+                    }}>
+                      📋 Keyword-based
+                    </span>
+                    <span>Fallback mode</span>
+                  </>
+                )}
+              </div>
+            )}
+          </div>
           <button
             onClick={onClose}
             style={{
@@ -1108,6 +1159,251 @@ function RefreshButton({ onRefresh, theme }) {
 }
 
 /**
+ * Rovo Setup Prompt Component (Banner Version)
+ * Shows setup instructions and allows marking as complete
+ */
+function RovoSetupPrompt({ theme, onMarkComplete }) {
+  const [showInstructions, setShowInstructions] = useState(false);
+
+  return (
+    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: '4px' }}>
+      <button
+        onClick={() => setShowInstructions(!showInstructions)}
+        style={{
+          padding: '6px 12px',
+          backgroundColor: '#6554C0',
+          color: 'white',
+          border: 'none',
+          borderRadius: '3px',
+          fontSize: '12px',
+          cursor: 'pointer',
+          fontWeight: '500',
+          textShadow: '1px 1px 2px rgba(0,0,0,0.5)',
+          boxShadow: '0 2px 4px rgba(0,0,0,0.3)',
+          transition: 'all 0.2s'
+        }}
+      >
+        🤖 Setup Rovo Agent
+      </button>
+      {showInstructions && (
+        <div style={{
+          position: 'absolute',
+          top: '100%',
+          right: 0,
+          marginTop: '8px',
+          backgroundColor: 'white',
+          border: '2px solid #6554C0',
+          borderRadius: '8px',
+          padding: '16px',
+          boxShadow: '0 8px 16px rgba(0,0,0,0.3)',
+          zIndex: 1000,
+          minWidth: '350px',
+          maxWidth: '400px'
+        }}>
+          <div style={{ color: '#172B4D', fontSize: '14px', lineHeight: '1.6' }}>
+            <div style={{ fontWeight: 'bold', marginBottom: '12px', fontSize: '16px' }}>
+              🤖 Rovo Agent Setup
+            </div>
+            <div style={{ marginBottom: '12px' }}>
+              <strong>Manual Setup Required:</strong>
+            </div>
+            <ol style={{ paddingLeft: '20px', margin: '0 0 12px 0' }}>
+              <li style={{ marginBottom: '8px' }}>
+                Go to <strong>Project Settings → Automation</strong>
+              </li>
+              <li style={{ marginBottom: '8px' }}>
+                Click <strong>"Create rule"</strong>
+              </li>
+              <li style={{ marginBottom: '8px' }}>
+                Select trigger: <strong>"Issue created"</strong>
+              </li>
+              <li style={{ marginBottom: '8px' }}>
+                Add condition: <strong>"Assignee is empty"</strong>
+              </li>
+              <li style={{ marginBottom: '8px' }}>
+                Add action: <strong>"Invoke Rovo Agent"</strong>
+                <div style={{ fontSize: '12px', color: '#5E6C84', marginTop: '4px' }}>
+                  Agent: <code>triageninja-agent</code>
+                </div>
+              </li>
+              <li>Enable and save the rule</li>
+            </ol>
+            <div style={{ display: 'flex', gap: '8px', marginTop: '16px' }}>
+              <button
+                onClick={() => {
+                  onMarkComplete();
+                  setShowInstructions(false);
+                }}
+                style={{
+                  flex: 1,
+                  padding: '8px 12px',
+                  backgroundColor: '#36B37E',
+                  color: 'white',
+                  border: 'none',
+                  borderRadius: '3px',
+                  fontSize: '13px',
+                  cursor: 'pointer',
+                  fontWeight: '500'
+                }}
+              >
+                ✓ Mark as Complete
+              </button>
+              <button
+                onClick={() => setShowInstructions(false)}
+                style={{
+                  flex: 1,
+                  padding: '8px 12px',
+                  backgroundColor: '#DFE1E6',
+                  color: '#172B4D',
+                  border: 'none',
+                  borderRadius: '3px',
+                  fontSize: '13px',
+                  cursor: 'pointer',
+                  fontWeight: '500'
+                }}
+              >
+                Close
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+/**
+ * Setup Rovo Agent Button Component (Banner Version)
+ * Compact version for banner display
+ */
+function SetupRovoButtonBanner({ theme, onSetupComplete }) {
+  const [setting, setSetting] = useState(false);
+  const [error, setError] = useState('');
+
+  const handleSetupRovo = async () => {
+    setSetting(true);
+    setError('');
+    
+    try {
+      const result = await invoke('createRovoAutomation');
+      if (onSetupComplete) {
+        onSetupComplete();
+      }
+    } catch (error) {
+      console.error('Failed to create Rovo Automation:', error);
+      setError(error.message || 'Setup failed');
+      setSetting(false);
+    }
+  };
+
+  return (
+    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: '4px' }}>
+      <button
+        onClick={handleSetupRovo}
+        disabled={setting}
+        style={{
+          padding: '6px 12px',
+          backgroundColor: setting ? 'rgba(101, 84, 192, 0.6)' : '#6554C0',
+          color: 'white',
+          border: 'none',
+          borderRadius: '3px',
+          fontSize: '12px',
+          cursor: setting ? 'not-allowed' : 'pointer',
+          fontWeight: '500',
+          textShadow: '1px 1px 2px rgba(0,0,0,0.5)',
+          boxShadow: '0 2px 4px rgba(0,0,0,0.3)',
+          transition: 'all 0.2s'
+        }}
+      >
+        {setting ? '⏳ Setting up...' : '🤖 Setup Rovo Agent'}
+      </button>
+      {error && (
+        <div style={{ 
+          fontSize: '10px', 
+          color: '#FF5630',
+          fontWeight: '500',
+          backgroundColor: 'rgba(255, 255, 255, 0.9)',
+          padding: '4px 8px',
+          borderRadius: '3px',
+          maxWidth: '200px',
+          textAlign: 'right'
+        }}>
+          {error}
+        </div>
+      )}
+    </div>
+  );
+}
+
+/**
+ * Setup Rovo Agent Button Component
+ * Creates Jira Automation Rule for Rovo Agent with one click
+ */
+function SetupRovoButton({ theme }) {
+  const [setting, setSetting] = useState(false);
+  const [message, setMessage] = useState('');
+  const [status, setStatus] = useState(''); // 'success', 'error', or ''
+
+  const handleSetupRovo = async () => {
+    setSetting(true);
+    setMessage('');
+    setStatus('');
+    
+    try {
+      const result = await invoke('createRovoAutomation');
+      setMessage(`✅ Rovo Agent Automation Rule created! (ID: ${result.ruleId})`);
+      setStatus('success');
+    } catch (error) {
+      console.error('Failed to create Rovo Automation:', error);
+      setMessage(`❌ Failed: ${error.message || 'Unknown error'}`);
+      setStatus('error');
+    } finally {
+      setSetting(false);
+    }
+  };
+
+  return (
+    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-start', gap: '8px' }}>
+      <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+        <button
+          onClick={handleSetupRovo}
+          disabled={setting}
+          style={{
+            padding: '8px 16px',
+            backgroundColor: setting ? '#B3D4FF' : '#6554C0',
+            color: 'white',
+            border: 'none',
+            borderRadius: '3px',
+            fontSize: '14px',
+            cursor: setting ? 'not-allowed' : 'pointer',
+            fontWeight: '500',
+            transition: 'background-color 0.2s'
+          }}
+        >
+          {setting ? '⏳ Setting up...' : '🤖 Setup Rovo Agent'}
+        </button>
+        <span style={{ fontSize: '12px', color: theme.textSecondary }}>
+          (One-time setup for AI-powered triage)
+        </span>
+      </div>
+      {message && (
+        <div style={{ 
+          fontSize: '12px', 
+          color: status === 'success' ? '#36B37E' : '#FF5630',
+          fontWeight: '500',
+          padding: '8px 12px',
+          backgroundColor: status === 'success' ? '#E3FCEF' : '#FFEBE6',
+          borderRadius: '3px',
+          border: `1px solid ${status === 'success' ? '#36B37E' : '#FF5630'}`
+        }}>
+          {message}
+        </div>
+      )}
+    </div>
+  );
+}
+
+/**
  * Test Ticket Creation Button Component
  * Creates sample tickets for testing the triage functionality
  */
@@ -1290,7 +1586,7 @@ function TicketRow({ ticket, t, theme, onTriageClick }) {
         gap: '10px',
         transition: 'background-color 0.2s',
         overflow: 'hidden',
-        minWidth: '1100px'
+        minWidth: '1050px'
       }}>
       {/* Ticket Key - Clickable */}
       <div 
@@ -1322,7 +1618,7 @@ function TicketRow({ ticket, t, theme, onTriageClick }) {
       </div>
       
       {/* Action Buttons */}
-      <div style={{ flex: '0 0 150px', display: 'flex', gap: '6px' }}>
+      <div style={{ flex: '0 0 100px', display: 'flex', gap: '6px' }}>
         {/* Triage Button - Blue if unassigned, outline if assigned */}
         <button
           onClick={(e) => {
@@ -1340,32 +1636,11 @@ function TicketRow({ ticket, t, theme, onTriageClick }) {
             fontSize: '12px',
             cursor: 'pointer',
             fontWeight: '500',
-            transition: 'all 0.2s'
+            transition: 'all 0.2s',
+            width: '100%'
           }}
         >
           {t.triageButton}
-        </button>
-        
-        {/* Rovo Button - Calls backend directly */}
-        <button
-          onClick={(e) => {
-            e.stopPropagation();
-            onTriageClick(); // Same as Triage button - uses backend Rovo Agent
-          }}
-          aria-label={`Ask Rovo about ${ticket.key}`}
-          style={{
-            padding: '6px 12px',
-            backgroundColor: isAssigned ? 'transparent' : '#6554C0',
-            color: isAssigned ? '#6554C0' : 'white',
-            border: isAssigned ? '1px solid #6554C0' : 'none',
-            borderRadius: '3px',
-            fontSize: '12px',
-            cursor: 'pointer',
-            fontWeight: '500',
-            transition: 'all 0.2s'
-          }}
-        >
-          🤖 Rovo
         </button>
       </div>
       
@@ -1412,20 +1687,23 @@ function TicketRow({ ticket, t, theme, onTriageClick }) {
         {ticket.fields.duedate ? (
           (() => {
             const dueDate = new Date(ticket.fields.duedate);
-            const isOverdue = dueDate < new Date();
+            const now = new Date();
+            now.setHours(0, 0, 0, 0); // Reset time to compare dates only
+            const isOverdue = dueDate < now;
             const formattedDate = dueDate.toLocaleDateString();
             
             return isOverdue ? (
               <span style={{
                 display: 'inline-block',
-                padding: '3px 8px',
+                padding: '4px 8px',
                 borderRadius: '3px',
                 backgroundColor: '#FF5630',
                 color: 'white',
                 fontSize: '11px',
-                fontWeight: 'bold'
+                fontWeight: 'bold',
+                boxShadow: '0 2px 4px rgba(255,86,48,0.3)'
               }}>
-                {formattedDate}
+                ⚠️ {formattedDate}
               </span>
             ) : (
               <span style={{ color: theme.textSecondary }}>
