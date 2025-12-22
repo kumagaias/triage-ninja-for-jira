@@ -158,9 +158,14 @@ This manual work is time-consuming (5-10 minutes per ticket), error-prone, and r
 
 ### Installation Link
 
+**Production Environment:**
+```
+https://developer.atlassian.com/console/install/9c1a29d7-af31-44fa-8fee-4f398c21e3b1?environment=production
+```
+
 **Development Environment:**
 ```
-https://developer.atlassian.com/console/install/81023c08-dbac-4cd9-8835-f1fe99bbb17c?environment=development
+https://developer.atlassian.com/console/install/9c1a29d7-af31-44fa-8fee-4f398c21e3b1?environment=development
 ```
 
 ### GitHub Repository

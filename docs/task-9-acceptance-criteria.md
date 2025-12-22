@@ -64,7 +64,7 @@ app:
     name: nodejs22.x
     memoryMB: 256
     architecture: arm64
-  id: ari:cloud:ecosystem::app/81023c08-dbac-4cd9-8835-f1fe99bbb17c
+  id: ari:cloud:ecosystem::app/9c1a29d7-af31-44fa-8fee-4f398c21e3b1
 ```
 
 **No External Services**:
@@ -359,13 +359,11 @@ forge install list
 **Output**:
 ```
 Showing all the current installations of your app:
-┌──────────────────────────────────────┬─────────────┬─────────────────────────────────────┬────────────────┬───────────────┐
-│ Installation ID                      │ Environment │ Site                                │ Atlassian apps │ Major Version │
-├──────────────────────────────────────┼─────────────┼─────────────────────────────────────┼────────────────┼───────────────┤
-│ f808c596-af0a-4c7e-b8c8-502082bb9506 │ development │ kumagaias-development.atlassian.net │ Jira           │ 2 (Latest)    │
-├──────────────────────────────────────┼─────────────┼─────────────────────────────────────┼────────────────┼───────────────┤
-│ fd277f02-fa47-4c1a-8f4d-2be7d1579b7e │ development │ kumagaias.atlassian.net             │ Jira           │ 2 (Latest)    │
-└──────────────────────────────────────┴─────────────┴─────────────────────────────────────┴────────────────┴───────────────┘
+┌──────────────────────────────────────┬─────────────┬─────────────────────────┬────────────────┬───────────────┐
+│ Installation ID                      │ Environment │ Site                    │ Atlassian apps │ Major Version │
+├──────────────────────────────────────┼─────────────┼─────────────────────────┼────────────────┼───────────────┤
+│ 68c4783f-566c-49cc-94d1-aff58ddc5417 │ production  │ kumagaias.atlassian.net │ Jira           │ 2 (Latest)    │
+└──────────────────────────────────────┴─────────────┴─────────────────────────┴────────────────┴───────────────┘
 ```
 
 **Key Evidence**:

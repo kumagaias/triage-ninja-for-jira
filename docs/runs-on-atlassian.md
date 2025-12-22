@@ -294,17 +294,15 @@ forge install list
 **Output**:
 ```
 Showing all the current installations of your app:
-┌──────────────────────────────────────┬─────────────┬─────────────────────────────────────┬────────────────┬───────────────┐
-│ Installation ID                      │ Environment │ Site                                │ Atlassian apps │ Major Version │
-├──────────────────────────────────────┼─────────────┼─────────────────────────────────────┼────────────────┼───────────────┤
-│ f808c596-af0a-4c7e-b8c8-502082bb9506 │ development │ kumagaias-development.atlassian.net │ Jira           │ 2 (Latest)    │
-├──────────────────────────────────────┼─────────────┼─────────────────────────────────────┼────────────────┼───────────────┤
-│ fd277f02-fa47-4c1a-8f4d-2be7d1579b7e │ development │ kumagaias.atlassian.net             │ Jira           │ 2 (Latest)    │
-└──────────────────────────────────────┴─────────────┴─────────────────────────────────────┴────────────────┴───────────────┘
+┌──────────────────────────────────────┬─────────────┬─────────────────────────┬────────────────┬───────────────┐
+│ Installation ID                      │ Environment │ Site                    │ Atlassian apps │ Major Version │
+├──────────────────────────────────────┼─────────────┼─────────────────────────┼────────────────┼───────────────┤
+│ 68c4783f-566c-49cc-94d1-aff58ddc5417 │ production  │ kumagaias.atlassian.net │ Jira           │ 2 (Latest)    │
+└──────────────────────────────────────┴─────────────┴─────────────────────────┴────────────────┴───────────────┘
 ```
 
 **Key Points**:
-- ✅ 2 active installations
+- ✅ 1 active installation (production)
 - ✅ Running on Atlassian infrastructure
 - ✅ No external dependencies
 

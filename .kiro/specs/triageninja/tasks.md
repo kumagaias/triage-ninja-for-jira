@@ -389,10 +389,11 @@
     - [x] すべての機能が動作（デプロイ済み）
   - _要件: ハッカソン要件_
   - **📝 インストール情報:**
-    - App ID: 81023c08-dbac-4cd9-8835-f1fe99bbb17c
-    - Development Link: https://developer.atlassian.com/console/install/81023c08-dbac-4cd9-8835-f1fe99bbb17c?environment=development
-    - Production Link: https://developer.atlassian.com/console/install/81023c08-dbac-4cd9-8835-f1fe99bbb17c?environment=production
-    - Current Installations: 2 sites (kumagaias-development, kumagaias)
+    - Developer Space: kumagaias
+    - App ID: 9c1a29d7-af31-44fa-8fee-4f398c21e3b1
+    - Development Link: https://developer.atlassian.com/console/install/9c1a29d7-af31-44fa-8fee-4f398c21e3b1?environment=development
+    - Production Link: https://developer.atlassian.com/console/install/9c1a29d7-af31-44fa-8fee-4f398c21e3b1?environment=production
+    - Current Installations: 1 site (kumagaias.atlassian.net)
 
 #### Day 14: 提出
 

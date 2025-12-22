@@ -1,106 +1,46 @@
 # TriageNinja Installation Link
 
-## App Information
-
-- **App Name**: TriageNinja for Jira
-- **App ID**: `ari:cloud:ecosystem::app/81023c08-dbac-4cd9-8835-f1fe99bbb17c`
-- **Version**: 2.9.0
-- **Platform**: Atlassian Forge
-- **Products**: Jira Software, Jira Service Management
-
-## Installation Links
-
-### Development Environment
-
-For testing and development:
+## Installation URL
 
 ```
-https://developer.atlassian.com/console/install/81023c08-dbac-4cd9-8835-f1fe99bbb17c?environment=development
+https://developer.atlassian.com/console/install/xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx?signature=xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
 ```
 
-### Production Environment
+## Category Selection
 
-For production use (after approval):
+**Selected Category:** Apps for Software Teams
 
-```
-https://developer.atlassian.com/console/install/81023c08-dbac-4cd9-8835-f1fe99bbb17c?environment=production
-```
+## Reason for Category Selection
 
-## Manual Installation
+TriageNinja is specifically designed for software development teams managing Jira Service Management tickets. The app automates ticket triage using AI-powered classification and intelligent assignee suggestions, which directly supports software teams' workflow efficiency. It integrates deeply with Jira's issue tracking system and provides developer-focused features like automated priority assignment and workload balancing. The target users are IT support teams, DevOps engineers, and software development teams who need to efficiently manage incoming support requests and bug reports.
 
-If you prefer to install manually:
+## How to Generate Installation Link
 
 1. Go to [Atlassian Developer Console](https://developer.atlassian.com/console/myapps/)
-2. Find "TriageNinja for Jira"
-3. Click "Install"
-4. Select your Jira site
-5. Choose environment (development or production)
-6. Click "Install"
+2. Select your app (TriageNinja)
+3. Navigate to "Distribution" tab
+4. Click "Create installation link"
+5. Select category: **Apps for Software Teams**
+6. Copy the generated installation link
 
-## Installation via Forge CLI
+## Installation Instructions for Users
 
-For developers:
+1. Click the installation link
+2. Select your Atlassian site
+3. Click "Install app"
+4. Grant the requested permissions
+5. Navigate to any Jira project
+6. Access TriageNinja from the project sidebar
 
-```bash
-# Install to development environment
-forge install --non-interactive \
-  --site your-site.atlassian.net \
-  --product jira \
-  --environment development
+## Required Permissions
 
-# Install to production environment
-forge install --non-interactive \
-  --site your-site.atlassian.net \
-  --product jira \
-  --environment production
-```
+- `read:jira-work` - Read Jira issues and project data
+- `write:jira-work` - Update issues with triage results
+- `storage:app` - Store app configuration and settings
 
-## Current Installations
+## Post-Installation Setup
 
-The app is currently installed on:
-
-1. **kumagaias-development.atlassian.net** (Development)
-   - Environment: development
-   - Version: 2.9.0
-   - Status: Active
-
-2. **kumagaias.atlassian.net** (Production)
-   - Environment: development
-   - Version: 2.9.0
-   - Status: Active
-
-## Verification
-
-After installation, verify the app is working:
-
-1. **Dashboard**: Navigate to any Jira project → "TriageNinja Dashboard" in sidebar
-2. **Issue Panel**: Open any issue → "AI Triage" panel on the right
-3. **Test**: Click "Run AI Triage" button and verify analysis works
-
-## Permissions Required
-
-The app requires the following permissions:
-
-- `read:jira-work` - Read Jira issues and projects
-- `write:jira-work` - Update issue assignee and fields
-- `read:jira-user` - Read user information for assignee matching
-
-## Support
-
-If you encounter any issues during installation:
-
-- Check [Forge CLI documentation](https://developer.atlassian.com/platform/forge/cli-reference/)
-- Review [Installation troubleshooting](https://developer.atlassian.com/platform/forge/troubleshooting/)
-- Contact support: support@triageninja.com
-
-## For Hackathon Judges
-
-To test TriageNinja:
-
-1. Use the development installation link above
-2. Install to your Jira test site
-3. Navigate to any project to see the dashboard
-4. Open any issue to see the AI Triage panel
-5. Click "Run AI Triage" to see AI analysis in action
-
-**Note**: The app is currently in development and requires Forge CLI for installation. After hackathon approval, it will be available on the Atlassian Marketplace for one-click installation.
+1. Enable Auto-Triage toggle in the dashboard
+2. (Optional) Configure Jira Automation rules for advanced workflows
+3. Create test tickets to verify functionality
+4. Review AI triage results and adjust as needed

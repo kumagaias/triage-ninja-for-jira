@@ -280,7 +280,7 @@ function App() {
         height: '150px',
         backgroundImage: 'url(triageninja-hero.jpg)',
         backgroundSize: 'cover',
-        backgroundPosition: 'top center',
+        backgroundPosition: 'center 30%',
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'space-between',
@@ -591,7 +591,7 @@ function App() {
               fontWeight: 'bold',
               fontSize: '12px',
               color: theme.textSecondary,
-              minWidth: '1000px'
+              minWidth: '1100px'
             }}>
               <div 
                 onClick={() => handleSort('key')}
@@ -602,6 +602,9 @@ function App() {
                 onClick={() => handleSort('summary')}
                 style={{ flex: '1 1 auto', cursor: 'pointer', userSelect: 'none' }}>
                 {t.summary || 'Summary'} {sortConfig.key === 'summary' && (sortConfig.direction === 'asc' ? '↑' : '↓')}
+              </div>
+              <div style={{ flex: '0 0 150px' }}>
+                Action
               </div>
               <div 
                 onClick={() => handleSort('assignee')}
@@ -627,9 +630,6 @@ function App() {
                 onClick={() => handleSort('priority')}
                 style={{ flex: '0 0 70px', textAlign: 'center', cursor: 'pointer', userSelect: 'none' }}>
                 {t.priority} {sortConfig.key === 'priority' && (sortConfig.direction === 'asc' ? '↑' : '↓')}
-              </div>
-              <div style={{ flex: '0 0 150px' }}>
-                {/* Action buttons column */}
               </div>
             </div>
             
@@ -799,7 +799,7 @@ function App() {
         fontSize: '12px',
         color: theme.textSecondary
       }}>
-        TriageNinja v6.47.0 (Production)
+        TriageNinja v6.50.0 (Production)
       </div>
     </div>
   );
@@ -1121,9 +1121,10 @@ function TestTicketButton({ t, onTicketsCreated }) {
     
     try {
       const result = await invoke('createTestTickets');
-      setMessage(`✅ ${result.count} ${t.testTicketsCreated}`);
+      const successMessage = `✅ ${result.count} test tickets created`;
+      setMessage(successMessage);
       
-      // Refresh the page after 2 seconds
+      // Refresh the page after 2 seconds to show the message
       setTimeout(() => {
         if (onTicketsCreated) {
           onTicketsCreated();
@@ -1131,8 +1132,7 @@ function TestTicketButton({ t, onTicketsCreated }) {
       }, 2000);
     } catch (error) {
       console.error('Failed to create test tickets:', error);
-      setMessage(`❌ ${t.testTicketsFailed}`);
-    } finally {
+      setMessage('❌ Failed to create test tickets');
       setCreating(false);
     }
   };
@@ -1277,6 +1277,8 @@ function TicketRow({ ticket, t, theme, onTriageClick }) {
     return date.toLocaleDateString();
   };
 
+  const isAssigned = !!ticket.fields.assignee?.displayName;
+
   return (
     <div 
       className="ticket-row"
@@ -1288,7 +1290,7 @@ function TicketRow({ ticket, t, theme, onTriageClick }) {
         gap: '10px',
         transition: 'background-color 0.2s',
         overflow: 'hidden',
-        minWidth: '1000px'
+        minWidth: '1100px'
       }}>
       {/* Ticket Key - Clickable */}
       <div 
@@ -1319,38 +1321,64 @@ function TicketRow({ ticket, t, theme, onTriageClick }) {
         {ticket.fields.summary}
       </div>
       
-      {/* Assignee - Triage button if unassigned */}
+      {/* Action Buttons */}
+      <div style={{ flex: '0 0 150px', display: 'flex', gap: '6px' }}>
+        {/* Triage Button - Blue if unassigned, outline if assigned */}
+        <button
+          onClick={(e) => {
+            e.stopPropagation();
+            onTriageClick();
+          }}
+          className="triage-button"
+          aria-label={`${t.triageButton} ${ticket.key}`}
+          style={{
+            padding: '6px 12px',
+            backgroundColor: isAssigned ? 'transparent' : '#0052CC',
+            color: isAssigned ? '#0052CC' : 'white',
+            border: isAssigned ? '1px solid #0052CC' : 'none',
+            borderRadius: '3px',
+            fontSize: '12px',
+            cursor: 'pointer',
+            fontWeight: '500',
+            transition: 'all 0.2s'
+          }}
+        >
+          {t.triageButton}
+        </button>
+        
+        {/* Rovo Button - Calls backend directly */}
+        <button
+          onClick={(e) => {
+            e.stopPropagation();
+            onTriageClick(); // Same as Triage button - uses backend Rovo Agent
+          }}
+          aria-label={`Ask Rovo about ${ticket.key}`}
+          style={{
+            padding: '6px 12px',
+            backgroundColor: isAssigned ? 'transparent' : '#6554C0',
+            color: isAssigned ? '#6554C0' : 'white',
+            border: isAssigned ? '1px solid #6554C0' : 'none',
+            borderRadius: '3px',
+            fontSize: '12px',
+            cursor: 'pointer',
+            fontWeight: '500',
+            transition: 'all 0.2s'
+          }}
+        >
+          🤖 Rovo
+        </button>
+      </div>
+      
+      {/* Assignee - Display name or dash */}
       <div style={{
         flex: '0 0 120px',
         fontSize: '12px',
+        color: theme.textSecondary,
         overflow: 'hidden',
         textOverflow: 'ellipsis',
         whiteSpace: 'nowrap'
       }}>
-        {ticket.fields.assignee?.displayName ? (
-          <span style={{ color: theme.textSecondary }}>
-            {ticket.fields.assignee.displayName}
-          </span>
-        ) : (
-          <button
-            onClick={(e) => {
-              e.stopPropagation();
-              onTriageClick();
-            }}
-            style={{
-              padding: '6px 12px',
-              backgroundColor: '#0052CC',
-              color: 'white',
-              border: 'none',
-              borderRadius: '3px',
-              fontSize: '12px',
-              cursor: 'pointer',
-              fontWeight: '500'
-            }}
-          >
-            Triage
-          </button>
-        )}
+        {ticket.fields.assignee?.displayName || '-'}
       </div>
       
       {/* Status */}
@@ -1419,54 +1447,6 @@ function TicketRow({ ticket, t, theme, onTriageClick }) {
         color: PRIORITY_COLORS[ticket.fields.priority?.name] || theme.textSecondary
       }}>
         {ticket.fields.priority?.name || 'None'}
-      </div>
-      
-      {/* Action Buttons */}
-      <div style={{ flex: '0 0 150px', display: 'flex', gap: '6px' }}>
-        {/* Triage Button */}
-        <button
-          onClick={(e) => {
-            e.stopPropagation();
-            onTriageClick();
-          }}
-          className="triage-button"
-          aria-label={`${t.triageButton} ${ticket.key}`}
-          style={{
-            padding: '6px 12px',
-            backgroundColor: '#0052CC',
-            color: 'white',
-            border: 'none',
-            borderRadius: '3px',
-            fontSize: '12px',
-            cursor: 'pointer',
-            fontWeight: '500',
-            transition: 'background-color 0.2s'
-          }}
-        >
-          {t.triageButton}
-        </button>
-        
-        {/* Rovo Button - Calls backend directly */}
-        <button
-          onClick={(e) => {
-            e.stopPropagation();
-            onTriageClick(); // Same as Triage button - uses backend Rovo Agent
-          }}
-          aria-label={`Ask Rovo about ${ticket.key}`}
-          style={{
-            padding: '6px 12px',
-            backgroundColor: '#6554C0',
-            color: 'white',
-            border: 'none',
-            borderRadius: '3px',
-            fontSize: '12px',
-            cursor: 'pointer',
-            fontWeight: '500',
-            transition: 'background-color 0.2s'
-          }}
-        >
-          🤖 Rovo
-        </button>
       </div>
     </div>
   );
