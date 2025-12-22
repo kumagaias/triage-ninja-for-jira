@@ -26,14 +26,6 @@ export async function autoTriageTriggerHandler(event: any, context: any) {
   });
 
   try {
-    // Check if auto-triage is enabled
-    const autoTriageEnabled = await storage.get('autoTriageEnabled');
-    
-    if (autoTriageEnabled === false) {
-      console.log('[autoTriageTrigger] Auto-triage is disabled, skipping');
-      return;
-    }
-
     const issueKey = event.issue?.key;
     const issueId = event.issue?.id;
 
@@ -42,9 +34,7 @@ export async function autoTriageTriggerHandler(event: any, context: any) {
       return;
     }
 
-    console.log('[autoTriageTrigger] Starting auto-triage for:', issueKey);
-
-    // Fetch full issue details using app context (triggers don't have user context)
+    // Fetch issue to get project key first
     const issueResponse = await JiraClient.getIssueAsApp(issueKey, [
       'summary',
       'description',
@@ -60,14 +50,24 @@ export async function autoTriageTriggerHandler(event: any, context: any) {
     }
 
     const issue = issueResponse.data;
+    const projectKey = issue.fields.project.key;
+
+    // Check if auto-triage is enabled for this project
+    const storageKey = `auto-triage-${projectKey}`;
+    const autoTriageEnabled = await storage.get(storageKey);
+    
+    if (autoTriageEnabled === false) {
+      console.log('[autoTriageTrigger] Auto-triage is disabled for project', projectKey);
+      return;
+    }
+
+    console.log('[autoTriageTrigger] Starting auto-triage for:', issueKey);
 
     // Skip if already assigned
     if (issue.fields.assignee) {
       console.log('[autoTriageTrigger] Issue already assigned, skipping');
       return;
     }
-
-    const projectKey = issue.fields.project.key;
 
     // Step 1: Classify the ticket
     console.log('[autoTriageTrigger] Classifying ticket');
