@@ -4,7 +4,7 @@
 
 ## References
 
-- **Common Standards**: `.kiro/steering/common/project-standards.md`
+- **Global Best Practices**: [kiro-best-practices](https://github.com/kumagaias/kiro-best-practices)
 - **Technical Architecture**: `.kiro/steering/tech.md`
 - **Spec**: `.kiro/specs/issue-16-rovo-agent-integration/`
 
@@ -246,6 +246,5 @@ export GITHUB_PERSONAL_ACCESS_TOKEN="ghp_your_token_here"
 
 ## Related Documents
 
-- **Common Standards**: `common/project-standards.md`
+- **Global Best Practices**: [kiro-best-practices](https://github.com/kumagaias/kiro-best-practices)
 - **Technical Architecture**: `tech.md`
-- **Common Tech Standards**: `common/tech.md`

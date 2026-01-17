@@ -22,12 +22,10 @@ modules:
       icon: https://kumagaias.github.io/triage-ninja-for-jira/assets/triageninja-icon.png
 
   # Forge LLM (Rovo) for AI-powered triage
-  # Temporarily disabled until EAP approval is received
-  # Uncomment after EAP approval: https://go.atlassian.com/signup-forge-llms
-  # llm:
-  #   - key: triageninja-llm
-  #     model:
-  #       - claude
+  llm:
+    - key: triageninja-llm
+      model:
+        - claude
 
   # Rovo Actions (kept for compatibility)
   action:

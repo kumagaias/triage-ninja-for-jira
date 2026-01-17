@@ -4,7 +4,7 @@
 
 ## References
 
-- **Common Tech Standards**: `.kiro/steering/common/tech.md`
+- **Global Best Practices**: [kiro-best-practices](https://github.com/kumagaias/kiro-best-practices)
 - **Project Standards**: `.kiro/steering/project.md`
 - **Spec**: `.kiro/specs/issue-16-rovo-agent-integration/`
 
@@ -292,6 +292,6 @@ async function updateIssue(issueKey: string, fields: any, accountId: string) {
 
 ## Related Documents
 
-- **Common Tech Standards**: `common/tech.md`
+- **Global Best Practices**: [kiro-best-practices](https://github.com/kumagaias/kiro-best-practices)
 - **Project Standards**: `project.md`
 - **Spec**: `.kiro/specs/issue-16-rovo-agent-integration/`
