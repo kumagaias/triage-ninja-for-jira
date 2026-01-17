@@ -120,15 +120,15 @@ dashboardResolver.define('getStatistics', async (req) => {
       error: untriagedResponse.error
     });
     
-    // Get today's processed tickets (assigned today - changed from EMPTY to not EMPTY today)
+    // Get today's processed tickets (tickets with assignee and updated today)
     const today = new Date();
     today.setHours(0, 0, 0, 0);
     const todayStr = today.toISOString().split('T')[0];
     
-    // Search for tickets that were assigned today (assignee changed from empty to not empty)
-    // This captures tickets that were triaged today
+    // Search for tickets that have an assignee and were updated today
+    // This is a simpler approach that doesn't require history search permissions
     const todayProcessedResponse = await JiraClient.searchIssues({
-      jql: `project = ${projectKey} AND assignee changed FROM EMPTY AFTER "${todayStr}"`,
+      jql: `project = ${projectKey} AND assignee is not EMPTY AND updated >= "${todayStr}"`,
       maxResults: 100, // Get up to 100 tickets to count
       fields: ['key'] // Only need the key field
     });
@@ -147,7 +147,7 @@ dashboardResolver.define('getStatistics', async (req) => {
     const mondayStr = monday.toISOString().split('T')[0];
     
     const weekProcessedResponse = await JiraClient.searchIssues({
-      jql: `project = ${projectKey} AND assignee changed FROM EMPTY AFTER "${mondayStr}"`,
+      jql: `project = ${projectKey} AND assignee is not EMPTY AND updated >= "${mondayStr}"`,
       maxResults: 100,
       fields: ['key']
     });
