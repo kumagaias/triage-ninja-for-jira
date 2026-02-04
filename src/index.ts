@@ -15,3 +15,18 @@ export { autoTriageTriggerHandler } from './triggers/autoTriageTrigger';
 
 // Export Automation Action handler
 export { automationAutoTriageHandler } from './resolvers/automationActionResolver';
+
+// Export Rovo Action handlers
+import * as RovoActions from './actions/rovoActions';
+
+export async function analyzeTicketClassificationHandler(event: any, context: any) {
+  return await RovoActions.analyzeTicketClassification(event.payload, context);
+}
+
+export async function suggestTicketAssigneeHandler(event: any, context: any) {
+  return await RovoActions.suggestTicketAssignee(event.payload, context);
+}
+
+export async function findSimilarTicketsHandler(event: any, context: any) {
+  return await RovoActions.findSimilarTickets(event.payload, context);
+}

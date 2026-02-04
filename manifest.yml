@@ -29,7 +29,31 @@ modules:
   #     model:
   #       - claude
 
-  # Rovo Actions (kept for compatibility)
+  # Rovo Agent - AI-powered ticket triage assistant
+  rovo:agent:
+    - key: triageninja-agent
+      name: TriageNinja
+      description: AI-powered Jira ticket triage assistant that helps classify tickets, suggest assignees, and find similar resolved tickets
+      prompt: |
+        You are TriageNinja, an AI assistant that helps support teams triage Jira tickets efficiently.
+        
+        Your capabilities:
+        1. Analyze tickets and suggest appropriate categories (Network, Hardware, Software, Database, Email & Communication, Security, Other)
+        2. Recommend the best assignee based on workload and expertise
+        3. Find similar resolved tickets to help with resolution
+        
+        When a user asks you to analyze a ticket, use the available actions to:
+        - Fetch ticket details with "analyze-ticket-classification"
+        - Suggest assignees with "suggest-ticket-assignee"
+        - Find similar tickets with "find-similar-tickets"
+        
+        Always provide clear, actionable recommendations with confidence scores and reasoning.
+      actions:
+        - analyze-ticket-classification
+        - suggest-ticket-assignee
+        - find-similar-tickets
+
+  # Rovo Actions
   action:
     # Automation Action for Auto-Triage
     - key: auto-triage-action
@@ -37,7 +61,7 @@ modules:
       function: automation-auto-triage
       actionVerb: UPDATE
       actionType: automation
-      description: Automatically classify and assign tickets using Forge LLM AI
+      description: Automatically classify and assign tickets using AI
       inputs:
         issueKey:
           title: Issue Key
@@ -61,6 +85,96 @@ modules:
           description: "AI confidence score (0-100)"
           type: number
           nullable: false
+    
+    # Rovo Action: Analyze Ticket Classification
+    - key: analyze-ticket-classification
+      name: Analyze Ticket Classification
+      function: analyze-ticket-action
+      actionVerb: READ
+      actionType: rovo
+      description: Analyze a Jira ticket and return structured data for classification
+      inputs:
+        issueKey:
+          title: Issue Key
+          type: string
+          required: true
+          description: "The Jira issue key to analyze (e.g., SUP-123)"
+      outputs:
+        issueKey:
+          description: "The issue key"
+          type: string
+          nullable: false
+        summary:
+          description: "Ticket summary"
+          type: string
+          nullable: false
+        description:
+          description: "Ticket description"
+          type: string
+          nullable: false
+        reporter:
+          description: "Reporter name"
+          type: string
+          nullable: false
+        currentPriority:
+          description: "Current priority"
+          type: string
+          nullable: false
+        currentStatus:
+          description: "Current status"
+          type: string
+          nullable: false
+    
+    # Rovo Action: Suggest Ticket Assignee
+    - key: suggest-ticket-assignee
+      name: Suggest Ticket Assignee
+      function: suggest-assignee-action
+      actionVerb: READ
+      actionType: rovo
+      description: Suggest the best assignee for a ticket based on workload and category
+      inputs:
+        issueKey:
+          title: Issue Key
+          type: string
+          required: true
+          description: "The Jira issue key (e.g., SUP-123)"
+        category:
+          title: Category
+          type: string
+          required: true
+          description: "The ticket category (e.g., Network, Hardware, Software)"
+      outputs:
+        recommendation:
+          description: "Recommended assignee with reasoning"
+          type: object
+          nullable: true
+        availableAgents:
+          description: "List of available agents with workload"
+          type: array
+          nullable: false
+    
+    # Rovo Action: Find Similar Tickets
+    - key: find-similar-tickets
+      name: Find Similar Tickets
+      function: find-similar-action
+      actionVerb: READ
+      actionType: rovo
+      description: Find similar resolved tickets to help with resolution
+      inputs:
+        issueKey:
+          title: Issue Key
+          type: string
+          required: true
+          description: "The Jira issue key to find similar tickets for (e.g., SUP-123)"
+      outputs:
+        similarTickets:
+          description: "List of similar resolved tickets"
+          type: array
+          nullable: false
+        totalFound:
+          description: "Total number of similar tickets found"
+          type: number
+          nullable: false
 
   # Resolver Functions
   function:
@@ -72,6 +186,13 @@ modules:
       handler: index.autoTriageTriggerHandler
     - key: automation-auto-triage
       handler: index.automationAutoTriageHandler
+    # Rovo Action Handlers
+    - key: analyze-ticket-action
+      handler: index.analyzeTicketClassificationHandler
+    - key: suggest-assignee-action
+      handler: index.suggestTicketAssigneeHandler
+    - key: find-similar-action
+      handler: index.findSimilarTicketsHandler
 
 resources:
   - key: dashboard
